@@ -7,9 +7,6 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 include(utils)
 
-add_subdirectory(ebur128/ebur128)
-add_subdirectory(scanner)
-
 
 set(ENABLE_INTERNAL_QUEUE_H OFF CACHE BOOL "Use own queue.h")
 set(DISABLE_SPEEXDSP        OFF CACHE BOOL "Don't build with speexdsp")
@@ -23,6 +20,11 @@ set(DISABLE_FFMPEG           ON CACHE BOOL "Don't build with ffmpeg")
 set(DISABLE_RSVG2           OFF CACHE BOOL "Don't build with rsvg2")
 set(DISABLE_GTK2            OFF CACHE BOOL "Don't build with gtk2")
 set(DISABLE_QT4             OFF CACHE BOOL "Don't build with qt4")
+
+
+add_subdirectory(ebur128/ebur128)
+add_subdirectory(scanner)
+
 
 to_yes_no(SUMMARY_HAS_QUEUE SUMMARY_SPEEXDSP_FOUND SUMMARY_GLIB20_FOUND
           SUMMARY_GTHREAD20_FOUND SUMMARY_SNDFILE_FOUND SUMMARY_TAGLIB_FOUND
