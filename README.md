@@ -1,10 +1,9 @@
-libebur128
-==========
+loudness-scanner
+================
 
-libebur128 is a library that implements the EBU R 128 standard for loudness
-normalisation.
-
-There is also a loudness scanner using different libraries for audio input.
+loudness-scanner is a tool that scans your music files according to the EBU
+R128 standard for loudness normalisation. It optionally adds ReplayGain
+compatible tags to the files.
 
 All source code is licensed under the MIT license. See LICENSE file for
 details.
@@ -12,18 +11,17 @@ details.
 Features
 --------
 
-* Portable ANSI C code
-* Implements M, S and I modes
-* Implements loudness range measurement (EBU - TECH 3342)
-* True peak scanning
-* Supports all samplerates by recalculation of the filter coefficients
+* Supports all libebur128 features:
+  * Portable ANSI C code
+  * Implements M, S and I modes
+  * Implements loudness range measurement (EBU - TECH 3342)
+  * True peak scanning
+  * Supports all samplerates by recalculation of the filter coefficients
 * ReplayGain compatible tagging support for MP3, OGG, Musepack, FLAC and more
 
 
 Requirements
 ------------
-
-The library itself has no requirements besides ANSI C.
 
 The scanner needs Glib, GTK and taglib.
 There is input support for gstreamer, libsndfile, libmpg123, FFmpeg
@@ -42,8 +40,8 @@ In the root folder, type:
 
 If you want the git version, run:
 
-    git clone git://github.com/jiixyj/libebur128.git
-    cd libebur128
+    git clone git://github.com/jiixyj/loudness-scanner.git
+    cd loudness-scanner
     git submodule init
     git submodule update
 
