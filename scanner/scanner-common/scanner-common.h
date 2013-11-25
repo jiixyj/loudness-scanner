@@ -9,6 +9,10 @@
 
 #include <glib.h>
 
+#define LOUDNESS_SCANNER_VERSION_MAJOR 0
+#define LOUDNESS_SCANNER_VERSION_MINOR 5
+#define LOUDNESS_SCANNER_VERSION_PATCH 0
+
 struct file_data
 {
     ebur128_state *st;
@@ -58,5 +62,6 @@ void get_state(struct filename_list_node *fln, GPtrArray *states);
 void get_max_peaks(struct filename_list_node *fln, struct file_data *result);
 void clear_line(void);
 void process_files(GSList *files, struct scan_opts *opts);
+void print_version(void);
 
 #endif /* end of include guard: SCANNER_COMMON_H */

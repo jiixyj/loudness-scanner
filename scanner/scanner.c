@@ -25,7 +25,7 @@
 
 
 static void print_help(void) {
-    printf("Usage: loudness scan|tag|dump [OPTION...] [FILE|DIRECTORY]...\n");
+    printf("Usage: loudness scan|tag|dump|--version [OPTION...] [FILE|DIRECTORY]...\n");
     printf("\n");
     printf("`loudness' scans audio files according to the EBU R128 standard. It can output\n");
 #ifdef USE_TAGLIB
@@ -42,6 +42,7 @@ static void print_help(void) {
     printf("  loudness tag -r bar/        # Tag all files in foo as one album per subfolder.\n");
 #endif
     printf("  loudness dump -m 1.0 a.wav  # Each second, write momentary loudness to stdout.\n");
+    printf("  loudness --version          # Write library and scanner version to stdout.\n");
     printf("\n");
     printf(" Main operation mode:\n");
     printf("  scan                       output loudness and peak information\n");
@@ -139,6 +140,9 @@ int main(int argc, char *argv[])
     } else if (!strcmp(argv[1], "dump")) {
         mode = LOUDNESS_MODE_DUMP;
         mode_parsed = loudness_dump_parse(&argc, &argv);
+    } else if (!strcmp(argv[1], "--version")) {
+        print_version();
+        exit(EXIT_SUCCESS);
     } else {
         fprintf(stderr, "Unknown mode '%s'\n", argv[1]);
     }

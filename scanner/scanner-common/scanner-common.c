@@ -352,3 +352,13 @@ void process_files(GSList *files, struct scan_opts *opts) {
     g_thread_pool_free(pool, FALSE, TRUE);
     g_thread_join(progress_bar_thread);
 }
+
+void print_version() {
+    int lib_major, lib_minor, lib_patch;
+    ebur128_get_version(&lib_major, &lib_minor, &lib_patch);
+    printf("library version: %d.%d.%d\n", lib_major, lib_minor, lib_patch);
+    printf("scanner version: %d.%d.%d\n",
+          LOUDNESS_SCANNER_VERSION_MAJOR,
+          LOUDNESS_SCANNER_VERSION_MINOR,
+          LOUDNESS_SCANNER_VERSION_PATCH);
+}
