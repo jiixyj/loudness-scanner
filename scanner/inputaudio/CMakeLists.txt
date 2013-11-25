@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.9)
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)

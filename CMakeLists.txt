@@ -1,14 +1,14 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.9)
 
-project(ebur128-loudness-tools)
+project(loudness-scanner)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
-add_subdirectory(ebur128)
-add_subdirectory(scanner)
-
 include(utils)
+
+add_subdirectory(ebur128/ebur128)
+add_subdirectory(scanner)
 
 
 set(ENABLE_INTERNAL_QUEUE_H OFF CACHE BOOL "Use own queue.h")
