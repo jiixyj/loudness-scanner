@@ -8,7 +8,7 @@
 
 static GStaticMutex ffmpeg_mutex = G_STATIC_MUTEX_INIT;
 
-#define BUFFER_SIZE (AVCODEC_MAX_AUDIO_FRAME_SIZE + FF_INPUT_BUFFER_PADDING_SIZE)
+#define BUFFER_SIZE (192000 + FF_INPUT_BUFFER_PADDING_SIZE)
 
 struct _buffer {
   uint8_t audio_buf[BUFFER_SIZE];
@@ -105,7 +105,7 @@ static int ffmpeg_open_file(struct input_handle* ih, const char* filename) {
   g_free(float_codec);
 
   // Open codec
-  if (avcodec_open(ih->codec_context, ih->codec) < 0) {
+  if (avcodec_open2(ih->codec_context, ih->codec, NULL) < 0) {
     fprintf(stderr, "Could not open the codec!\n");
     g_static_mutex_unlock(&ffmpeg_mutex);
     goto close_file;
@@ -299,4 +299,4 @@ G_MODULE_EXPORT struct input_ops ip_ops = {
   ffmpeg_exit_library
 };
 
-G_MODULE_EXPORT const char* ip_exts[] = {"wav", "flac", "ogg", "oga", "mp3", "mp2", "mpc", "ac3", "wv", "mpg", "avi", "mkv", "m4a", "mp4", "aac", "mov", "mxf", NULL};
+G_MODULE_EXPORT const char* ip_exts[] = {"wav", "flac", "ogg", "oga", "mp3", "mp2", "mpc", "ac3", "wv", "mpg", "avi", "mkv", "m4a", "mp4", "aac", "mov", "mxf", "opus", NULL};
