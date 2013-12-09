@@ -128,7 +128,7 @@ static int ffmpeg_open_file(struct input_handle* ih, const char* filename) {
 
 close_file:
   g_static_mutex_lock(&ffmpeg_mutex);
-  av_close_input_file(ih->format_context);
+  avformat_close_input(&ih->format_context);
   g_static_mutex_unlock(&ffmpeg_mutex);
   return 1;
 }
@@ -257,7 +257,11 @@ write_to_buffer: ;
   float*   data_float =  (float*)   data;
   double*  data_double = (double*)  data;
 
-  if (ih->frame->nb_samples * ih->frame->channels > sizeof ih->buffer) {
+  /* TODO: fix this */
+  int channels = ih->codec_context->channels;
+  // channels = ih->frame->channels;
+
+  if (ih->frame->nb_samples * channels > sizeof ih->buffer) {
     fprintf(stderr, "buffer too small!\n");
     return 0;
   }
@@ -269,24 +273,24 @@ write_to_buffer: ;
       nr_frames_read = 0;
       goto out;
     case AV_SAMPLE_FMT_S16:
-      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         ih->buffer[i] = ((float) data_short[i]) /
                         MAX(-(float) SHRT_MIN, (float) SHRT_MAX);
       }
       break;
     case AV_SAMPLE_FMT_S32:
-      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         ih->buffer[i] = ((float) data_int[i]) /
                         MAX(-(float) INT_MIN, (float) INT_MAX);
       }
       break;
     case AV_SAMPLE_FMT_FLT:
-      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         ih->buffer[i] = data_float[i];
       }
       break;
     case AV_SAMPLE_FMT_DBL:
-      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         ih->buffer[i] = (float) data_double[i];
       }
       break;
