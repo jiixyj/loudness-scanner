@@ -6,23 +6,21 @@
 #include "ebur128.h"
 #include "input.h"
 
-static GStaticMutex ffmpeg_mutex = G_STATIC_MUTEX_INIT;
-
 #define BUFFER_SIZE (192000 + FF_INPUT_BUFFER_PADDING_SIZE)
 
-struct _buffer {
-  uint8_t audio_buf[BUFFER_SIZE];
-} __attribute__ ((aligned (16)));
+static GStaticMutex ffmpeg_mutex = G_STATIC_MUTEX_INIT;
 
 struct input_handle {
   AVFormatContext* format_context;
   AVCodecContext* codec_context;
   AVCodec* codec;
+  AVFrame* frame;
   AVPacket packet;
-  int need_new_frame;
+  AVPacket orig_packet;
   int audio_stream;
-  uint8_t* old_data;
-  struct _buffer audio_buf;
+  int flushing;
+  int got_frame;
+  int packet_left;
   float buffer[BUFFER_SIZE / 2 + 1];
 };
 
@@ -41,8 +39,6 @@ static float* ffmpeg_get_buffer(struct input_handle* ih) {
 static struct input_handle* ffmpeg_handle_init() {
   struct input_handle* ret;
   ret = malloc(sizeof(struct input_handle));
-
-  av_init_packet(&ret->packet);
 
   return ret;
 }
@@ -110,9 +106,23 @@ static int ffmpeg_open_file(struct input_handle* ih, const char* filename) {
     g_static_mutex_unlock(&ffmpeg_mutex);
     goto close_file;
   }
+
+  ih->frame = avcodec_alloc_frame();
+  if (!ih->frame) {
+    fprintf(stderr, "Could not allocate frame!\n");
+    g_static_mutex_unlock(&ffmpeg_mutex);
+    goto close_file;
+  }
+
+  av_init_packet(&ih->packet);
+  ih->packet.data = NULL;
+  ih->orig_packet.size = 0;
+
   g_static_mutex_unlock(&ffmpeg_mutex);
-  ih->need_new_frame = TRUE;
-  ih->old_data = NULL;
+
+  ih->flushing = 0;
+  ih->got_frame = 0;
+  ih->packet_left = 0;
 
   return 0;
 
@@ -177,81 +187,115 @@ static size_t ffmpeg_get_total_frames(struct input_handle* ih) {
   }
 }
 
-static size_t ffmpeg_read_one_packet(struct input_handle* ih) {
-next_frame:
-  do {
-    if (av_read_frame(ih->format_context, &ih->packet) < 0) {
-      return 0;
-    }
-  } while (ih->packet.stream_index != ih->audio_stream);
-
-  size_t nr_frames_read, i;
-
-  int data_size = sizeof(ih->audio_buf);
-  int len = avcodec_decode_audio3(ih->codec_context,
-                                  (int16_t*) &ih->audio_buf,
-                                  &data_size, &ih->packet);
-  if (len < 0 || data_size < 0) {
+static int decode_packet(struct input_handle* ih) {
+  int ret = 0;
+  ret = avcodec_decode_audio4(ih->codec_context, ih->frame,
+                              &ih->got_frame, &ih->packet);
+  if (ret < 0) {
     fprintf(stderr, "Error in decoder!\n");
-    nr_frames_read = 0;
-    goto out;
+    return ret;
   }
 
-  /* No data used, (happens with metadata frames for example) */
-  if (len <= 0 || data_size <= 0) {
-    av_free_packet(&ih->packet);
-    goto next_frame;
+  return FFMIN(ret, ih->packet.size);
+}
+
+static size_t ffmpeg_read_one_packet(struct input_handle* ih) {
+start:
+  if (ih->flushing) {
+    ih->packet.data = NULL;
+    ih->packet.size = 0;
+    decode_packet(ih);
+    if (!ih->got_frame) {
+      return 0;
+    } else {
+      goto write_to_buffer;
+    }
   }
 
-  int16_t* data_short =  (int16_t*) &ih->audio_buf;
-  int32_t* data_int =    (int32_t*) &ih->audio_buf;
-  float*   data_float =  (float*)   &ih->audio_buf;
-  double*  data_double = (double*)  &ih->audio_buf;
+  if (ih->packet_left)
+    goto packet_left;
 
-  switch (ih->codec_context->sample_fmt) {
+next_frame:
+  for (;;) {
+    if (av_read_frame(ih->format_context, &ih->packet) < 0) {
+      ih->flushing = 1;
+      goto start;
+    }
+    if (ih->packet.stream_index != ih->audio_stream) {
+      av_free_packet(&ih->packet);
+      continue;
+    } else {
+      break;
+    }
+  }
+
+  int ret;
+  ih->orig_packet = ih->packet;
+packet_left:
+  ret = decode_packet(ih);
+  if (ret < 0)
+    goto free_packet;
+  ih->packet.data += ret;
+  ih->packet.size -= ret;
+  if (ih->packet.size > 0) {
+    ih->packet_left = 1;
+  } else {
+free_packet:
+    av_free_packet(&ih->orig_packet);
+    ih->packet_left = 0;
+  }
+
+  if (!ih->got_frame)
+    goto start;
+
+write_to_buffer: ;
+  int nr_frames_read = ih->frame->nb_samples;
+  uint8_t* data = ih->frame->extended_data[0];
+
+  int16_t* data_short =  (int16_t*) data;
+  int32_t* data_int =    (int32_t*) data;
+  float*   data_float =  (float*)   data;
+  double*  data_double = (double*)  data;
+
+  if (ih->frame->nb_samples * ih->frame->channels > sizeof ih->buffer) {
+    fprintf(stderr, "buffer too small!\n");
+    return 0;
+  }
+
+  int i;
+  switch (ih->frame->format) {
     case AV_SAMPLE_FMT_U8:
       fprintf(stderr, "8 bit audio not supported by libebur128!\n");
       nr_frames_read = 0;
       goto out;
     case AV_SAMPLE_FMT_S16:
-      nr_frames_read = (size_t) data_size / sizeof(int16_t) /
-                       (size_t) ih->codec_context->channels;
-      for (i = 0; i < (size_t) data_size / sizeof(int16_t); ++i) {
+      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
         ih->buffer[i] = ((float) data_short[i]) /
                         MAX(-(float) SHRT_MIN, (float) SHRT_MAX);
       }
       break;
     case AV_SAMPLE_FMT_S32:
-      nr_frames_read = (size_t) data_size / sizeof(int32_t) /
-                       (size_t) ih->codec_context->channels;
-      for (i = 0; i < (size_t) data_size / sizeof(int32_t); ++i) {
+      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
         ih->buffer[i] = ((float) data_int[i]) /
                         MAX(-(float) INT_MIN, (float) INT_MAX);
       }
       break;
     case AV_SAMPLE_FMT_FLT:
-      nr_frames_read = (size_t) data_size / sizeof(float) /
-                       (size_t) ih->codec_context->channels;
-      for (i = 0; i < (size_t) data_size / sizeof(float); ++i) {
+      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
         ih->buffer[i] = data_float[i];
       }
       break;
     case AV_SAMPLE_FMT_DBL:
-      nr_frames_read = (size_t) data_size / sizeof(double) /
-                       (size_t) ih->codec_context->channels;
-      for (i = 0; i < (size_t) data_size / sizeof(double); ++i) {
+      for (i = 0; i < ih->frame->nb_samples * ih->frame->channels; ++i) {
         ih->buffer[i] = (float) data_double[i];
       }
       break;
-    case AV_SAMPLE_FMT_NONE:
-    case AV_SAMPLE_FMT_NB:
     default:
-      fprintf(stderr, "Unknown sample format!\n");
+      fprintf(stderr, "Unknown or packed sample format!\n");
       nr_frames_read = 0;
       goto out;
   }
 out:
-  av_free_packet(&ih->packet);
   return nr_frames_read;
 }
 
@@ -267,7 +311,7 @@ static void ffmpeg_free_buffer(struct input_handle* ih) {
 static void ffmpeg_close_file(struct input_handle* ih) {
   g_static_mutex_lock(&ffmpeg_mutex);
   avcodec_close(ih->codec_context);
-  av_close_input_file(ih->format_context);
+  avformat_close_input(&ih->format_context);
   g_static_mutex_unlock(&ffmpeg_mutex);
 }
 
@@ -299,4 +343,6 @@ G_MODULE_EXPORT struct input_ops ip_ops = {
   ffmpeg_exit_library
 };
 
-G_MODULE_EXPORT const char* ip_exts[] = {"wav", "flac", "ogg", "oga", "mp3", "mp2", "mpc", "ac3", "wv", "mpg", "avi", "mkv", "m4a", "mp4", "aac", "mov", "mxf", "opus", NULL};
+G_MODULE_EXPORT const char* ip_exts[] = {
+  "wav", "flac", "ogg", "oga", "mp3", "mp2", "mpc", "ac3", "wv", "mpg",
+  "avi", "mkv", "m4a", "mp4", "aac", "mov", "mxf", "opus", NULL};
