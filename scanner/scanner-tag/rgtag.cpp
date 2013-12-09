@@ -2,16 +2,23 @@
 
 #include "rgtag.h"
 
+#include <taglib.h>
 #include <id3v2tag.h>
 #include <textidentificationframe.h>
 #include <relativevolumeframe.h>
 #include <xiphcomment.h>
 #include <apetag.h>
 
+#if TAGLIB_MINOR_VERSION >= 9
+#define HAS_OPUS_SUPPORT
+#endif
+
 #include <mpegfile.h>
 #include <flacfile.h>
 #include <oggfile.h>
+#ifdef HAS_OPUS_SUPPORT
 #include <opusfile.h>
+#endif
 #include <vorbisfile.h>
 #include <mpcfile.h>
 #include <wavpackfile.h>
@@ -149,11 +156,13 @@ static bool tag_vorbis_comment(const char* filename,
           new TagLib::Ogg::Vorbis::File(CAST_FILENAME filename);
     xiph = f->tag();
     file = f;
+#ifdef HAS_OPUS_SUPPORT
   } else if (!std::strcmp(extension, "opus")) {
     TagLib::Ogg::Opus::File* f =
           new TagLib::Ogg::Opus::File(CAST_FILENAME filename);
     xiph = f->tag();
     file = f;
+#endif
   }
   xiph->addField("REPLAYGAIN_TRACK_GAIN", gds->track_gain);
   xiph->addField("REPLAYGAIN_TRACK_PEAK", gds->track_peak);
@@ -225,9 +234,11 @@ int set_rg_info(const char* filename,
       !std::strcmp(extension, "mp2")) {
     return tag_id3v2(filename, gd, &gds);
   } else if (!std::strcmp(extension, "flac") ||
+#ifdef HAS_OPUS_SUPPORT
+             !std::strcmp(extension, "opus") ||
+#endif
              !std::strcmp(extension, "ogg") ||
-             !std::strcmp(extension, "oga") ||
-             !std::strcmp(extension, "opus")) {
+             !std::strcmp(extension, "oga")) {
     return tag_vorbis_comment(filename, extension, gd, &gds);
   } else if (!std::strcmp(extension, "mpc") ||
              !std::strcmp(extension, "wv")) {
