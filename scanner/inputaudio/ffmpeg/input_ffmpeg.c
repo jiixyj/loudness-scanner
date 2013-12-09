@@ -294,8 +294,42 @@ write_to_buffer: ;
         ih->buffer[i] = (float) data_double[i];
       }
       break;
+    case AV_SAMPLE_FMT_S16P:
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
+        int current_channel = i / ih->frame->nb_samples;
+        int current_sample = i % ih->frame->nb_samples;
+        ih->buffer[current_sample * channels + current_channel]
+            = ((float) data_short[i]) /
+                        MAX(-(float) SHRT_MIN, (float) SHRT_MAX);
+      }
+      break;
+    case AV_SAMPLE_FMT_S32P:
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
+        int current_channel = i / ih->frame->nb_samples;
+        int current_sample = i % ih->frame->nb_samples;
+        ih->buffer[current_sample * channels + current_channel]
+            = ((float) data_int[i]) /
+                        MAX(-(float) INT_MIN, (float) INT_MAX);
+      }
+      break;
+    case AV_SAMPLE_FMT_FLTP:
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
+        int current_channel = i / ih->frame->nb_samples;
+        int current_sample = i % ih->frame->nb_samples;
+        ih->buffer[current_sample * channels + current_channel]
+            = data_float[i];
+      }
+      break;
+    case AV_SAMPLE_FMT_DBLP:
+      for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
+        int current_channel = i / ih->frame->nb_samples;
+        int current_sample = i % ih->frame->nb_samples;
+        ih->buffer[current_sample * channels + current_channel]
+            = (float) data_double[i];
+      }
+      break;
     default:
-      fprintf(stderr, "Unknown or packed sample format!\n");
+      fprintf(stderr, "Unknown sample format!\n");
       nr_frames_read = 0;
       goto out;
   }
