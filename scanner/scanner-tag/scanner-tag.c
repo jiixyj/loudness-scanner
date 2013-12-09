@@ -16,6 +16,7 @@ extern gboolean verbose;
 extern gboolean histogram;
 static gboolean track = FALSE;
 static gboolean dry_run = FALSE;
+static gboolean incremental_tagging = FALSE;
 static gboolean tag_tp = FALSE;
 extern gchar *decode_to_file;
 
@@ -23,6 +24,7 @@ static GOptionEntry entries[] =
 {
     { "track", 't', 0, G_OPTION_ARG_NONE, &track, NULL, NULL },
     { "dry-run", 'n', 0, G_OPTION_ARG_NONE, &dry_run, NULL, NULL },
+    { "incremental", 0, 0, G_OPTION_ARG_NONE, &incremental_tagging, NULL, NULL },
     { "tag-tp", 0, 0, G_OPTION_ARG_NONE, &tag_tp, NULL, NULL },
     { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, 0 }
 };
@@ -113,6 +115,20 @@ static void print_file_data(struct filename_list_node *fln, gpointer unused)
     }
 }
 
+/* must g_free basename and filename */
+void get_filename_and_extension(struct filename_list_node *fln,
+        char **basename, char **extension, char **filename) {
+    *basename = g_path_get_basename(fln->fr->raw);
+    *extension = strrchr(*basename, '.');
+    if (*extension) ++*extension;
+    else *extension = "";
+#ifdef G_OS_WIN32
+    *filename = (char *) g_utf8_to_utf16(fln->fr->raw, -1, NULL, NULL, NULL);
+#else
+    *filename = g_strdup(fln->fr->raw);
+#endif
+}
+
 static int tag_output_state = 0;
 void tag_file(struct filename_list_node *fln, int *ret)
 {
@@ -126,15 +142,7 @@ void tag_file(struct filename_list_node *fln, int *ret)
                                 fd->gain_album,
                                 fd->peak_album };
 
-        basename = g_path_get_basename(fln->fr->raw);
-        extension = strrchr(basename, '.');
-        if (extension) ++extension;
-        else extension = "";
-#ifdef G_OS_WIN32
-        filename = (char *) g_utf8_to_utf16(fln->fr->raw, -1, NULL, NULL, NULL);
-#else
-        filename = g_strdup(fln->fr->raw);
-#endif
+        get_filename_and_extension(fln, &basename, &extension, &filename);
 
         error = set_rg_info(filename, extension, &gd);
         if (error) {
@@ -195,8 +203,29 @@ int tag_files(GSList *files) {
     return ret;
 }
 
+void append_to_untagged_list(struct filename_list_node *fln, GSList **ret) {
+    char *basename, *extension, *filename;
+    get_filename_and_extension(fln, &basename, &extension, &filename);
+
+    if (!has_rg_info(filename, extension)) {
+      *ret = g_slist_prepend(*ret, fln);
+    }
+
+    g_free(basename);
+    g_free(filename);
+}
+
 int loudness_tag(GSList *files)
 {
+    if (incremental_tagging) {
+        GSList *untagged_files = NULL;
+        g_slist_foreach(files, (GFunc) append_to_untagged_list,
+                        &untagged_files);
+        untagged_files = g_slist_reverse(untagged_files);
+
+        files = untagged_files;
+    }
+
     if (scan_files(files) && !dry_run) {
         return tag_files(files);
     }

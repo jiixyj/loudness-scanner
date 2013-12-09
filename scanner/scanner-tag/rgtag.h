@@ -19,6 +19,9 @@ int set_rg_info(const char* filename,
                 const char* extension,
                 struct gain_data* gd);
 
+int has_rg_info(const char* filename,
+                const char* extension);
+
 #ifdef __cplusplus
 }
 #endif
