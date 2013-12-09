@@ -250,7 +250,8 @@ free_packet:
 
 write_to_buffer: ;
   int nr_frames_read = ih->frame->nb_samples;
-  uint8_t* data = ih->frame->extended_data[0];
+  uint8_t** ed = ih->frame->extended_data;
+  uint8_t* data = ed[0];
 
   int16_t* data_short =  (int16_t*) data;
   int32_t* data_int =    (int32_t*) data;
@@ -298,8 +299,8 @@ write_to_buffer: ;
       for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         int current_channel = i / ih->frame->nb_samples;
         int current_sample = i % ih->frame->nb_samples;
-        ih->buffer[current_sample * channels + current_channel]
-            = ((float) data_short[i]) /
+        ih->buffer[current_sample * channels + current_channel] =
+          ((float) ((int16_t*) ed[current_channel])[current_sample]) /
                         MAX(-(float) SHRT_MIN, (float) SHRT_MAX);
       }
       break;
@@ -307,8 +308,8 @@ write_to_buffer: ;
       for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         int current_channel = i / ih->frame->nb_samples;
         int current_sample = i % ih->frame->nb_samples;
-        ih->buffer[current_sample * channels + current_channel]
-            = ((float) data_int[i]) /
+        ih->buffer[current_sample * channels + current_channel] =
+          ((float) ((int32_t*) ed[current_channel])[current_sample]) /
                         MAX(-(float) INT_MIN, (float) INT_MAX);
       }
       break;
@@ -316,16 +317,16 @@ write_to_buffer: ;
       for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         int current_channel = i / ih->frame->nb_samples;
         int current_sample = i % ih->frame->nb_samples;
-        ih->buffer[current_sample * channels + current_channel]
-            = data_float[i];
+        ih->buffer[current_sample * channels + current_channel] =
+                     ((float*) ed[current_channel])[current_sample];
       }
       break;
     case AV_SAMPLE_FMT_DBLP:
       for (i = 0; i < ih->frame->nb_samples * channels; ++i) {
         int current_channel = i / ih->frame->nb_samples;
         int current_sample = i % ih->frame->nb_samples;
-        ih->buffer[current_sample * channels + current_channel]
-            = (float) data_double[i];
+        ih->buffer[current_sample * channels + current_channel] =
+                    ((double*) ed[current_channel])[current_sample];
       }
       break;
     default:
