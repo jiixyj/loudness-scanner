@@ -330,6 +330,9 @@ static bool tag_mp4(const char* filename,
                     struct gain_data_strings* gds) {
   TagLib::MP4::File f(CAST_FILENAME filename);
   TagLib::MP4::Tag* t = f.tag();
+  if (!t) {
+    return 1;
+  }
   TagLib::MP4::ItemListMap& ilm = t->itemListMap();
   ilm["----:com.apple.iTunes:replaygain_track_gain"] = TagLib::MP4::Item(TagLib::StringList(gds->track_gain));
   ilm["----:com.apple.iTunes:replaygain_track_peak"] = TagLib::MP4::Item(TagLib::StringList(gds->track_peak));
@@ -346,6 +349,10 @@ static bool tag_mp4(const char* filename,
 static bool has_tag_mp4(const char* filename) {
   TagLib::MP4::File f(CAST_FILENAME filename);
   TagLib::MP4::Tag* t = f.tag();
+  if (!t) {
+    std::cerr << "Error reading mp4 tag" << std::endl;
+    return false;
+  }
   TagLib::MP4::ItemListMap& ilm = t->itemListMap();
 
   TagLib::uint fieldCount = ilm.size();
