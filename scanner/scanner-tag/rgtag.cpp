@@ -11,6 +11,7 @@
 #include <mpegfile.h>
 #include <flacfile.h>
 #include <oggfile.h>
+#include <opusfile.h>
 #include <vorbisfile.h>
 #include <mpcfile.h>
 #include <wavpackfile.h>
@@ -138,12 +139,19 @@ static bool tag_vorbis_comment(const char* filename,
                                struct gain_data_strings* gds) {
   TagLib::File* file = NULL;
   TagLib::Ogg::XiphComment* xiph = NULL;
-  if (!::strcmp(extension, "flac")) {
+  if (!std::strcmp(extension, "flac")) {
     TagLib::FLAC::File* f = new TagLib::FLAC::File(CAST_FILENAME filename);
     xiph = f->xiphComment(true);
     file = f;
-  } else if (!::strcmp(extension, "ogg") || !::strcmp(extension, "oga")) {
-    TagLib::Ogg::Vorbis::File* f = new TagLib::Ogg::Vorbis::File(CAST_FILENAME filename);
+  } else if (!std::strcmp(extension, "ogg") ||
+             !std::strcmp(extension, "oga")) {
+    TagLib::Ogg::Vorbis::File* f =
+          new TagLib::Ogg::Vorbis::File(CAST_FILENAME filename);
+    xiph = f->tag();
+    file = f;
+  } else if (!std::strcmp(extension, "opus")) {
+    TagLib::Ogg::Opus::File* f =
+          new TagLib::Ogg::Opus::File(CAST_FILENAME filename);
     xiph = f->tag();
     file = f;
   }
@@ -167,11 +175,11 @@ static bool tag_ape(const char* filename,
                     struct gain_data_strings* gds) {
   TagLib::File* file = NULL;
   TagLib::APE::Tag* ape = NULL;
-  if (!::strcmp(extension, "mpc")) {
+  if (!std::strcmp(extension, "mpc")) {
     TagLib::MPC::File* f = new TagLib::MPC::File(CAST_FILENAME filename);
     ape = f->APETag(true);
     file = f;
-  } else if (!::strcmp(extension, "wv")) {
+  } else if (!std::strcmp(extension, "wv")) {
     TagLib::WavPack::File* f = new TagLib::WavPack::File(CAST_FILENAME filename);
     ape = f->APETag(true);
     file = f;
@@ -213,13 +221,19 @@ int set_rg_info(const char* filename,
                 struct gain_data* gd) {
   struct gain_data_strings gds(gd);
 
-  if (!::strcmp(extension, "mp3") || !::strcmp(extension, "mp2")) {
+  if (!std::strcmp(extension, "mp3") ||
+      !std::strcmp(extension, "mp2")) {
     return tag_id3v2(filename, gd, &gds);
-  } else if (!::strcmp(extension, "flac") || !::strcmp(extension, "ogg") || !::strcmp(extension, "oga")) {
+  } else if (!std::strcmp(extension, "flac") ||
+             !std::strcmp(extension, "ogg") ||
+             !std::strcmp(extension, "oga") ||
+             !std::strcmp(extension, "opus")) {
     return tag_vorbis_comment(filename, extension, gd, &gds);
-  } else if (!::strcmp(extension, "mpc") || !::strcmp(extension, "wv")) {
+  } else if (!std::strcmp(extension, "mpc") ||
+             !std::strcmp(extension, "wv")) {
     return tag_ape(filename, extension, gd, &gds);
-  } else if (!::strcmp(extension, "mp4") || !::strcmp(extension, "m4a")) {
+  } else if (!std::strcmp(extension, "mp4") ||
+             !std::strcmp(extension, "m4a")) {
     return tag_mp4(filename, gd, &gds);
   }
   return 1;
