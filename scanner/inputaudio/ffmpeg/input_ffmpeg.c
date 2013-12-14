@@ -1,6 +1,13 @@
 /* See COPYING file for copyright and license details. */
 
 #include <libavformat/avformat.h>
+#if LIBAVCODEC_VERSION_MAJOR >= 53
+# if LIBAVUTIL_VERSION_MAJOR > 52
+#  include <libavutil/channel_layout.h>
+# else
+#  include <libavutil/audioconvert.h>
+# endif
+#endif
 #include <gmodule.h>
 
 #include "ebur128.h"
