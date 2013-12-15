@@ -1,6 +1,13 @@
 /* See COPYING file for copyright and license details. */
 
 #include <libavformat/avformat.h>
+#if LIBAVCODEC_VERSION_MAJOR >= 53
+# if LIBAVUTIL_VERSION_MAJOR > 52
+#  include <libavutil/channel_layout.h>
+# else
+#  include <libavutil/audioconvert.h>
+# endif
+#endif
 #include <gmodule.h>
 
 #include "ebur128.h"
@@ -60,7 +67,7 @@ static int ffmpeg_open_file(struct input_handle* ih, const char* filename) {
     g_static_mutex_unlock(&ffmpeg_mutex);
     return 1;
   }
-  if (av_find_stream_info(ih->format_context) < 0) {
+  if (avformat_find_stream_info(ih->format_context, 0) < 0) {
     fprintf(stderr, "Could not find stream info!\n");
     g_static_mutex_unlock(&ffmpeg_mutex);
     goto close_file;
