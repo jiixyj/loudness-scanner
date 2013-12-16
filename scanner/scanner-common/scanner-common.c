@@ -150,7 +150,6 @@ void init_state_and_scan_work_item(struct filename_list_node *fln, struct scan_o
 
     result = ops->allocate_buffer(ih);
     if (result) abort();
-    buffer = ops->get_buffer(ih);
 
 #ifdef USE_SNDFILE
     if (opts->decode_file) {
@@ -173,6 +172,7 @@ void init_state_and_scan_work_item(struct filename_list_node *fln, struct scan_o
         g_cond_broadcast(progress_cond);
         g_mutex_unlock(progress_mutex);
         fd->number_of_elapsed_frames += nr_frames_read;
+        buffer = ops->get_buffer(ih);
         result = ebur128_add_frames_float(fd->st, buffer, nr_frames_read);
 #ifdef USE_SNDFILE
         if (opts->decode_file) {
