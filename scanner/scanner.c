@@ -1,7 +1,12 @@
 /* See COPYING file for copyright and license details. */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #ifdef G_OS_WIN32
 #include <windows.h>
+#include <io.h>
+#else
+#include <unistd.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,6 +124,13 @@ enum modes
     LOUDNESS_MODE_DUMP
 };
 
+void set_buffering_mode(FILE *fp)
+{
+    struct stat stb;
+    if (fstat(fileno(fp), &stb) == 0 && (stb.st_mode & S_IFMT) != S_IFREG)
+        setbuf(fp, 0);
+}
+
 int main(int argc, char *argv[])
 {
     GSList *errors = NULL, *files = NULL;
@@ -129,6 +141,9 @@ int main(int argc, char *argv[])
         print_help();
         exit(EXIT_FAILURE);
     }
+    set_buffering_mode(stdout);
+    set_buffering_mode(stderr);
+
     if (!strcmp(argv[1], "scan")) {
         mode = LOUDNESS_MODE_SCAN;
         mode_parsed = loudness_scan_parse(&argc, &argv);
