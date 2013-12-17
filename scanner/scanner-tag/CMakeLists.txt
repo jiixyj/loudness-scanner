@@ -9,4 +9,6 @@ if(TAGLIB_FOUND AND NOT DISABLE_TAGLIB)
   add_library(scanner-tag scanner-tag rgtag)
   include_directories(${TAGLIB_INCLUDE_DIRS})
   target_link_libraries(scanner-tag scanner-common ${TAGLIB_LIBRARIES})
+  install(TARGETS scanner-tag DESTINATION lib)
 endif()
+

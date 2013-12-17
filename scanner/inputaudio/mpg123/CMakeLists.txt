@@ -26,4 +26,5 @@ if(GMODULE20_FOUND AND MPG123_FOUND AND
   set_target_properties(input_mpg123 PROPERTIES
           COMPILE_FLAGS ${INPUT_MPG123_CFLAGS}
              LINK_FLAGS ${INPUT_MPG123_LDFLAGS})
+  install(TARGETS input_mpg123 DESTINATION lib)
 endif()

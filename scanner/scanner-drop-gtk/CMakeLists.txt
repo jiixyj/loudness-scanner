@@ -21,5 +21,7 @@ if(TARGET scanner-tag)
             ${GLIB20_LIBRARIES}
             ${GTHREAD20_LIBRARIES}
             ${RSVG2_LIBRARIES})
+
+    install(TARGETS loudness-drop-gtk DESTINATION bin)
   endif()
 endif()

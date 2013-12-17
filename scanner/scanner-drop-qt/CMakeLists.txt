@@ -16,5 +16,7 @@ if(TARGET scanner-tag)
             ${QT_QTCORE_LIBRARY}
             ${QT_QTGUI_LIBRARY}
             ${QT_QTSVG_LIBRARY})
+
+    install(TARGETS loudness-drop-qt DESTINATION bin)
   endif()
 endif()
