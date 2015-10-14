@@ -11,10 +11,11 @@ set(SUMMARY_MPCDEC_FOUND ${MPCDEC_FOUND} CACHE INTERNAL "")
 if(GMODULE20_FOUND AND MPCDEC_FOUND AND
    INPUT_INCLUDE_DIR AND EBUR128_INCLUDE_DIR AND
    NOT DISABLE_GLIB20 AND NOT DISABLE_MPCDEC)
-  add_library(input_musepack MODULE input_mpcdec.c)
-
   include_directories(SYSTEM ${MPCDEC_INCLUDE_DIRS})
   include_directories(${INPUT_INCLUDE_DIR} ${EBUR128_INCLUDE_DIR})
+
+  add_library(input_musepack MODULE input_mpcdec.c)
+
   target_link_libraries(input_musepack ${MPCDEC_LIBRARIES})
 
   list(APPEND INPUT_MPCDEC_CFLAGS  ${GMODULE20_CFLAGS})

@@ -13,7 +13,6 @@ set(SUMMARY_FFMPEG_FOUND ${LIBAVFORMAT_FOUND} CACHE INTERNAL "")
 if(LIBAVFORMAT_FOUND AND GMODULE20_FOUND AND
    INPUT_INCLUDE_DIR AND EBUR128_INCLUDE_DIR AND
    NOT DISABLE_GLIB20 AND NOT DISABLE_FFMPEG)
-  add_library(input_ffmpeg MODULE input_ffmpeg.c ../input_helper.c)
 
   include_directories(${INPUT_INCLUDE_DIR} ${EBUR128_INCLUDE_DIR})
   include_directories(${LIBAVFORMAT_INCLUDE_DIRS}
@@ -23,6 +22,9 @@ if(LIBAVFORMAT_FOUND AND GMODULE20_FOUND AND
                    ${LIBAVCODEC_LIBRARY_DIRS}
                    ${LIBAVUTIL_LIBRARY_DIRS}
                    ${GMODULE20_LIBRARY_DIRS})
+
+  add_library(input_ffmpeg MODULE input_ffmpeg.c ../input_helper.c)
+
   target_link_libraries(input_ffmpeg
                         ${LIBAVFORMAT_LIBRARIES}
                         ${LIBAVCODEC_LIBRARIES}
