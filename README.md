@@ -23,9 +23,20 @@ Features
 Requirements
 ------------
 
-The scanner needs Glib, GTK and taglib.
-There is input support for gstreamer, libsndfile, libmpg123, FFmpeg
-and libmpcdec.
+- Glib
+- taglib
+
+input plugins (all optional):
+- gstreamer
+- libsndfile
+- libmpg123
+- ffmpeg
+- libmpcdec
+
+optional GUI frontends:
+- GTK2
+or
+- Qt
 
 
 Installation
