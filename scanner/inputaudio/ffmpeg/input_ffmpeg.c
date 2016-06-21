@@ -114,7 +114,11 @@ static int ffmpeg_open_file(struct input_handle* ih, const char* filename) {
     goto close_file;
   }
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(55,28,1)
+  ih->frame = av_frame_alloc();
+#else
   ih->frame = avcodec_alloc_frame();
+#endif
   if (!ih->frame) {
     fprintf(stderr, "Could not allocate frame!\n");
     g_static_mutex_unlock(&ffmpeg_mutex);
