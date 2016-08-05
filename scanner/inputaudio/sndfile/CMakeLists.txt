@@ -32,4 +32,5 @@ if(GMODULE20_FOUND AND SNDFILE_FOUND AND
     set_target_properties(input_sndfile PROPERTIES
                LINK_FLAGS ${INPUT_SNDFILE_LDFLAGS})
   endif()
+  install(TARGETS input_sndfile DESTINATION lib)
 endif()

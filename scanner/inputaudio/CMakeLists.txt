@@ -21,4 +21,6 @@ if(GMODULE20_FOUND AND NOT DISABLE_GLIB20)
   add_library(input input)
 
   target_link_libraries(input ${GMODULE20_LIBRARIES})
+
+  install(TARGETS input DESTINATION lib)
 endif()

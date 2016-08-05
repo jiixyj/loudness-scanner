@@ -64,4 +64,7 @@ if(GLIB20_FOUND AND GTHREAD20_FOUND AND NOT DISABLE_GLIB20)
     set_property(TARGET loudness APPEND PROPERTY
           COMPILE_DEFINITIONS "USE_TAGLIB")
   endif()
+
+  install(TARGETS scanner-lib DESTINATION lib)
+  install(TARGETS loudness DESTINATION bin)
 endif()

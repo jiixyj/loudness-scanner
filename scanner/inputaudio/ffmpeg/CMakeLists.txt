@@ -47,4 +47,5 @@ if(LIBAVFORMAT_FOUND AND GMODULE20_FOUND AND
     set_target_properties(input_ffmpeg PROPERTIES
                LINK_FLAGS ${INPUT_FFMPEG_LDFLAGS})
   endif()
+  install(TARGETS input_ffmpeg DESTINATION lib)
 endif()
