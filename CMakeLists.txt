@@ -6,10 +6,10 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 include(utils)
+include(GNUInstallDirs)
 
 
 set(ENABLE_INTERNAL_QUEUE_H OFF CACHE BOOL "Use own queue.h")
-set(DISABLE_SPEEXDSP        OFF CACHE BOOL "Don't build with speexdsp")
 set(DISABLE_GLIB20          OFF CACHE BOOL "Don't build with glib")
 set(DISABLE_SNDFILE         OFF CACHE BOOL "Don't build with sndfile")
 set(DISABLE_TAGLIB          OFF CACHE BOOL "Don't build with taglib")
@@ -26,12 +26,12 @@ add_subdirectory(ebur128/ebur128)
 add_subdirectory(scanner)
 
 
-to_yes_no(SUMMARY_HAS_QUEUE SUMMARY_SPEEXDSP_FOUND SUMMARY_GLIB20_FOUND
+to_yes_no(SUMMARY_HAS_QUEUE SUMMARY_GLIB20_FOUND
           SUMMARY_GTHREAD20_FOUND SUMMARY_SNDFILE_FOUND SUMMARY_TAGLIB_FOUND
           SUMMARY_MPG123_FOUND SUMMARY_MPCDEC_FOUND SUMMARY_GSTREAMER_FOUND
           SUMMARY_FFMPEG_FOUND SUMMARY_RSVG2_FOUND SUMMARY_GTK2_FOUND
           SUMMARY_QT4_FOUND)
-to_yes_no(DISABLE_SPEEXDSP DISABLE_GLIB20 DISABLE_SNDFILE DISABLE_TAGLIB
+to_yes_no(DISABLE_GLIB20 DISABLE_SNDFILE DISABLE_TAGLIB
           DISABLE_MPG123 DISABLE_MPCDEC DISABLE_GSTREAMER DISABLE_FFMPEG
           DISABLE_RSVG2 DISABLE_GTK2 DISABLE_QT4)
 
@@ -44,7 +44,6 @@ endif()
 ##### Print status
 message(STATUS "status          found / disabled --")
 message(STATUS "queue.h:        ${SUMMARY_HAS_QUEUE}"        "     ${USE_QUEUE}")
-message(STATUS "speexdsp:       ${SUMMARY_SPEEXDSP_FOUND}"   "     ${DISABLE_SPEEXDSP}")
 message(STATUS "glib-2.0:       ${SUMMARY_GLIB20_FOUND}"     "     ${DISABLE_GLIB20}")
 message(STATUS "gthread-2.0:    ${SUMMARY_GTHREAD20_FOUND}"  "     ${DISABLE_GLIB20}")
 message(STATUS "sndfile:        ${SUMMARY_SNDFILE_FOUND}"    "     ${DISABLE_SNDFILE}")
