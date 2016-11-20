@@ -1,6 +1,11 @@
 /* See COPYING file for copyright and license details. */
 
-#include "scanner-drop-qt.moc"
+#include "scanner-drop-qt.h"
+
+#include <QAction>
+#include <QApplication>
+#include <QHeaderView>
+#include <QVBoxLayout>
 
 #include <iostream>
 #include <glib.h>
@@ -23,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("Loudness Drop");
 
     setMinimumSize(130, 130);
-    setMaximumSize(0, 0);
+    setMaximumSize(130, 130);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     QAction *quitAction = new QAction(tr("E&xit"), this);
@@ -170,8 +175,13 @@ ResultWindow::ResultWindow(QWidget *parent, GSList *files, Filetree tree)
     view->setSortingEnabled(true);
     view->sortByColumn(-1);
     view->setItemsExpandable(false);
+#if QT_VERSION >= 0x050000
+    view->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    view->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+#else
     view->header()->setResizeMode(QHeaderView::ResizeToContents);
     view->header()->setResizeMode(1, QHeaderView::Stretch);
+#endif
     view->header()->setStretchLastSection(false);
     view->setItemDelegateForColumn(0, new IconDelegate);
 
@@ -339,7 +349,7 @@ IconDelegate::IconDelegate(QWidget *parent)
 void IconDelegate::paint(QPainter *painter, QStyleOptionViewItem const& option,
                          QModelIndex const& index) const
 {
-    int tag_status = qVariantValue<int>(index.data(Qt::UserRole));
+    int tag_status = index.data(Qt::UserRole).toInt();
     QStyledItemDelegate::paint(painter, option, index);
     if (tag_status == 0) return;
     QIcon icon = tag_status == 1
@@ -492,7 +502,9 @@ int main(int argc, char *argv[])
     scanner_init_common();
     setlocale(LC_COLLATE, "");
     setlocale(LC_CTYPE, "");
+#if QT_VERSION < 0x050000
     QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
+#endif
 
     MainWindow window;
     window.show();

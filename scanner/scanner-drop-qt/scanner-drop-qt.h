@@ -3,6 +3,11 @@
 #include <QtGui>
 #include <QSvgRenderer>
 
+#include <QProgressBar>
+#include <QTreeView>
+#include <QPushButton>
+#include <QStyledItemDelegate>
+
 extern "C" {
 #include "input.h"
 
