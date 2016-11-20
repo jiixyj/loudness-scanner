@@ -26,6 +26,6 @@ if(GMODULE20_FOUND AND GSTREAMER_FOUND AND
   to_space_list(INPUT_GSTREAMER_LDFLAGS)
 
   set_target_properties(input_gstreamer PROPERTIES
-          COMPILE_FLAGS ${INPUT_GSTREAMER_CFLAGS}
-             LINK_FLAGS ${INPUT_GSTREAMER_LDFLAGS})
+          COMPILE_FLAGS ${INPUT_GSTREAMER_CFLAGS})
+  target_link_libraries(input_gstreamer ${INPUT_GSTREAMER_LDFLAGS})
 endif()
