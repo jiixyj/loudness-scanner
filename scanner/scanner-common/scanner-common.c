@@ -1,6 +1,7 @@
 /* See COPYING file for copyright and license details. */
 
 #include "scanner-common.h"
+#include "nproc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
