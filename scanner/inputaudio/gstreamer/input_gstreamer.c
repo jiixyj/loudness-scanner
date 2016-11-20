@@ -179,8 +179,14 @@ static gpointer gstreamer_loop(struct input_handle *ih) {
                              "audio/x-raw-float,width=32,endianness=1234 ! "
                              "ffenc_ac3 bitrate=128000 ! ffmux_ac3 ! filesink location=tmp.ac3", &error);
 #endif
-  if (!ih->bin) {
-    fprintf(stderr, "Parse error: %s", error->message);
+  if (!ih->bin || error) {
+    fprintf(stderr, "Parse error: %s\n", error->message);
+    ih->quit_pipeline = TRUE;
+    ih->ready = TRUE;
+    if (ih->bin) {
+      g_object_unref(ih->bin);
+      ih->bin = NULL;
+    }
     return NULL;
   }
 
