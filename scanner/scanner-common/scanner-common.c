@@ -283,7 +283,7 @@ static gpointer print_progress_bar(gpointer p_started)
         // signal calling thread that we are ready
         if (!*started) {
             *started = 1;
-            g_cond_signal(progress_cond);
+            g_cond_broadcast(progress_cond);
         }
         g_cond_wait(progress_cond, progress_mutex);
 
