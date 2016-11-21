@@ -10,7 +10,3 @@ if(SNDFILE_FOUND AND NOT DISABLE_SNDFILE)
   add_definitions(-DUSE_SNDFILE)
   target_link_libraries(scanner-common ${SNDFILE_LIBRARIES})
 endif()
-
-if(SUMMARY_SPEEXDSP_FOUND AND NOT DISABLE_SPEEXDSP)
-  add_definitions(-DUSE_SPEEX_RESAMPLER)
-endif()

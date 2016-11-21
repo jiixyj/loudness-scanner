@@ -14,8 +14,6 @@
 #include "parse_args.h"
 #include "scanner-common.h"
 
-/* knob: USE_SPEEX_RESAMPLER */
-
 
 static struct file_data empty;
 
@@ -130,11 +128,9 @@ gboolean loudness_scan_parse(int *argc, char **argv[])
 {
     gboolean success = parse_mode_args(argc, argv, entries);
     if (peak && strcmp(peak, "sample")
-#ifdef USE_SPEEX_RESAMPLER
              && strcmp(peak, "true")
              && strcmp(peak, "dbtp")
              && strcmp(peak, "all")
-#endif
             ) {
         fprintf(stderr, "Invalid argument to --peak!\n");
         return FALSE;

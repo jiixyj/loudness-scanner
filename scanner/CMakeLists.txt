@@ -55,10 +55,6 @@ if(GLIB20_FOUND AND GTHREAD20_FOUND AND NOT DISABLE_GLIB20)
           COMPILE_DEFINITIONS "USE_SNDFILE")
   endif()
 
-  if(SUMMARY_SPEEXDSP_FOUND AND NOT DISABLE_SPEEXDSP)
-    add_definitions(-DUSE_SPEEX_RESAMPLER)
-  endif()
-
   if(TARGET scanner-tag)
     target_link_libraries(loudness scanner-tag)
     set_property(TARGET loudness APPEND PROPERTY
