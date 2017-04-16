@@ -156,4 +156,4 @@ G_MODULE_EXPORT struct input_ops ip_ops = {
   sndfile_exit_library
 };
 
-G_MODULE_EXPORT const char* ip_exts[] = {"wav", "flac", "ogg", "oga", NULL};
+G_MODULE_EXPORT const char* ip_exts[] = {"wav", "flac", "ogg", "oga", "w64", NULL};
