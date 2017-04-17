@@ -395,4 +395,4 @@ G_MODULE_EXPORT struct input_ops ip_ops = {
 
 G_MODULE_EXPORT const char* ip_exts[] = {
   "wav", "flac", "ogg", "oga", "mp3", "mp2", "mpc", "ac3", "wv", "mpg",
-  "avi", "mkv", "m4a", "mp4", "aac", "mov", "mxf", "opus", NULL};
+  "avi", "mkv", "m4a", "mp4", "aac", "mov", "mxf", "opus", "w64", NULL};
