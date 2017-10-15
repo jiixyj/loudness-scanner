@@ -18,6 +18,7 @@ static gboolean track = FALSE;
 static gboolean dry_run = FALSE;
 static gboolean incremental_tagging = FALSE;
 static gboolean tag_tp = FALSE;
+static gboolean force_as_album = FALSE;
 extern gchar *decode_to_file;
 
 static GOptionEntry entries[] =
@@ -26,6 +27,7 @@ static GOptionEntry entries[] =
     { "dry-run", 'n', 0, G_OPTION_ARG_NONE, &dry_run, NULL, NULL },
     { "incremental", 0, 0, G_OPTION_ARG_NONE, &incremental_tagging, NULL, NULL },
     { "tag-tp", 0, 0, G_OPTION_ARG_NONE, &tag_tp, NULL, NULL },
+    { "force-as-album", 0, 0, G_OPTION_ARG_NONE, &force_as_album, NULL, NULL },
     { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, 0 }
 };
 
@@ -174,7 +176,11 @@ int scan_files(GSList *files) {
         process_files(files, &opts);
 
         if (!track) {
-            g_slist_foreach(files, (GFunc) calculate_album_gain_and_peak, NULL);
+            if (force_as_album) {
+                files_in_current_dir = g_slist_copy(files);
+            } else {
+                g_slist_foreach(files, (GFunc) calculate_album_gain_and_peak, NULL);
+            }
             calculate_album_gain_and_peak_last_dir();
         }
 
