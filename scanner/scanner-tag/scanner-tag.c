@@ -223,7 +223,7 @@ void append_to_untagged_list(struct filename_list_node *fln, GSList **ret) {
     char *basename, *extension, *filename;
     get_filename_and_extension(fln, &basename, &extension, &filename);
 
-    if (!has_rg_info(filename, extension)) {
+    if (!has_rg_info(filename, extension, opus_compat)) {
       *ret = g_slist_prepend(*ret, fln);
     }
 

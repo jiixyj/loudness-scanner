@@ -359,12 +359,15 @@ static bool tag_vorbis_comment(const char* filename,
 }
 
 static bool has_vorbis_comment(const char* filename,
-                               const char* extension) {
+                               const char* extension,
+                               bool opus_compat) {
   std::pair<TagLib::File*, TagLib::Ogg::XiphComment*> p
       = get_ogg_file(filename, extension);
 
   bool has_tag;
   TagLib::uint fieldCount = p.second->fieldCount();
+
+  bool is_opus = !std::strcmp(extension, "opus");
 
   TagLib::Ogg::FieldListMap const& flm = p.second->fieldListMap();
   if (flm.contains("REPLAYGAIN_ALBUM_PEAK")) {
@@ -390,7 +393,25 @@ static bool has_vorbis_comment(const char* filename,
   p.second->removeField("REPLAYGAIN_ALBUM_PEAK");
   p.second->removeField("REPLAYGAIN_TRACK_GAIN");
   p.second->removeField("REPLAYGAIN_TRACK_PEAK");
-  if (!std::strcmp(extension, "opus")) {
+
+  if (is_opus) {
+    if (p.second->fieldCount() < fieldCount) {
+      if (!opus_compat) {
+        /* If we see any of those tags above in 'non-legacy' opus mode, we need
+         * to remove them. Just rescan the file for now. */
+        has_tag = false;
+        goto end;
+      } else {
+        /* If we are in legacy opus mode, we need _both_ R128_* and REPLAYGAIN_*
+         * tags. So reset fieldCount so that the logic below works. */
+        fieldCount = p.second->fieldCount();
+      }
+    } else if (opus_compat) {
+      /* We need those tags in 'legacy' opus mode. Force a rescan. */
+      has_tag = false;
+      goto end;
+    }
+
     p.second->removeField("R128_ALBUM_GAIN");
     p.second->removeField("R128_TRACK_GAIN");
   }
@@ -545,7 +566,7 @@ int set_rg_info(const char* filename,
   return 1;
 }
 
-int has_rg_info(const char* filename, const char* extension) {
+int has_rg_info(const char* filename, const char* extension, int opus_compat) {
   if (!std::strcmp(extension, "mp3") ||
       !std::strcmp(extension, "mp2")) {
     return has_tag_id3v2(filename);
@@ -555,7 +576,7 @@ int has_rg_info(const char* filename, const char* extension) {
 #endif
              !std::strcmp(extension, "ogg") ||
              !std::strcmp(extension, "oga")) {
-    return has_vorbis_comment(filename, extension);
+    return has_vorbis_comment(filename, extension, !!opus_compat);
   // TODO: implement "0.0 workaround" for ape
   } else if (!std::strcmp(extension, "mpc") ||
              !std::strcmp(extension, "wv")) {

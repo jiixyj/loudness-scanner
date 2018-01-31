@@ -23,7 +23,8 @@ int set_rg_info(const char* filename,
                 int opus_compat);
 
 int has_rg_info(const char* filename,
-                const char* extension);
+                const char* extension,
+                int opus_compat);
 
 void adjust_with_file_gain(struct gain_data* gd,
                            const char* filename,
