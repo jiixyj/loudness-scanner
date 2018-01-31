@@ -191,9 +191,11 @@ void init_state_and_scan_work_item(struct filename_list_node *fln, struct scan_o
     if (fd->number_of_elapsed_frames != fd->number_of_frames) {
         if (verbose) {
             fprintf(stderr, "Warning: Could not read full file"
-                            " or determine right length: "
+                            " or determine right length for file %s: "
                             "Expected: %lu Got: %lu",
-                            fd->number_of_frames, fd->number_of_elapsed_frames);
+                            fln->fr->display,
+                            fd->number_of_frames,
+                            fd->number_of_elapsed_frames);
         }
         g_mutex_lock(progress_mutex);
         total_frames = total_frames + fd->number_of_elapsed_frames - fd->number_of_frames;
