@@ -17,8 +17,8 @@ extern gboolean histogram;
 static gboolean track = FALSE;
 static gboolean dry_run = FALSE;
 static gboolean incremental_tagging = FALSE;
-static gboolean tag_tp = FALSE;
 static gboolean force_as_album = FALSE;
+static gboolean opus_compat = FALSE;
 extern gchar *decode_to_file;
 
 static GOptionEntry entries[] =
@@ -26,8 +26,8 @@ static GOptionEntry entries[] =
     { "track", 't', 0, G_OPTION_ARG_NONE, &track, NULL, NULL },
     { "dry-run", 'n', 0, G_OPTION_ARG_NONE, &dry_run, NULL, NULL },
     { "incremental", 0, 0, G_OPTION_ARG_NONE, &incremental_tagging, NULL, NULL },
-    { "tag-tp", 0, 0, G_OPTION_ARG_NONE, &tag_tp, NULL, NULL },
     { "force-as-album", 0, 0, G_OPTION_ARG_NONE, &force_as_album, NULL, NULL },
+    { "opus-vorbisgain-compat", 0, 0, G_OPTION_ARG_NONE, &opus_compat, NULL, NULL },
     { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, 0 }
 };
 
@@ -59,9 +59,9 @@ static void calculate_album_gain_and_peak_last_dir(void)
     g_slist_foreach(files_in_current_dir, (GFunc) get_state, states);
     ebur128_loudness_global_multiple((ebur128_state **) states->pdata,
                                      states->len, &album_data[0]);
-    album_data[0] = clamp_rg(RG_REFERENCE_LEVEL - album_data[0]);
+    album_data[0] = RG_REFERENCE_LEVEL - album_data[0];
     g_slist_foreach(files_in_current_dir, (GFunc) get_max_peaks, &result);
-    album_data[1] = tag_tp ? result.true_peak : result.peak;
+    album_data[1] = result.peak;
     g_slist_foreach(files_in_current_dir, (GFunc) fill_album_data, album_data);
 
     g_ptr_array_free(states, TRUE);
@@ -91,32 +91,6 @@ static void calculate_album_gain_and_peak(struct filename_list_node *fln, gpoint
     g_free(dirname);
 }
 
-
-static void print_file_data(struct filename_list_node *fln, gpointer unused)
-{
-    struct file_data *fd = (struct file_data *) fln->d;
-
-    (void) unused;
-    if (fd->scanned) {
-        if (!track) {
-            g_print("%7.2f dB, %7.2f dB, %10.6f, %10.6f",
-                    fd->gain_album,
-                    clamp_rg(RG_REFERENCE_LEVEL - fd->loudness),
-                    fd->peak_album,
-                    tag_tp ? fd->true_peak : fd->peak);
-        } else {
-            g_print("%7.2f dB, %10.6f",
-                    clamp_rg(RG_REFERENCE_LEVEL - fd->loudness),
-                    tag_tp ? fd->true_peak : fd->peak);
-        }
-        if (fln->fr->display[0]) {
-            g_print(", ");
-            print_utf8_string(fln->fr->display);
-        }
-        putchar('\n');
-    }
-}
-
 /* must g_free basename and filename */
 void get_filename_and_extension(struct filename_list_node *fln,
         char **basename, char **extension, char **filename) {
@@ -131,6 +105,42 @@ void get_filename_and_extension(struct filename_list_node *fln,
 #endif
 }
 
+static void print_file_data(struct filename_list_node *fln, gpointer unused)
+{
+    struct file_data *fd = (struct file_data *) fln->d;
+
+    (void) unused;
+    if (fd->scanned) {
+        struct gain_data gd = {RG_REFERENCE_LEVEL - fd->loudness,
+                               fd->peak, !track,
+                               fd->gain_album, fd->peak_album};
+        char *basename, *extension, *filename;
+        get_filename_and_extension(fln, &basename, &extension, &filename);
+        adjust_with_file_gain(&gd, filename, extension);
+        clamp_gain_data(&gd);
+
+        g_free(basename);
+        g_free(filename);
+
+        if (!track) {
+            g_print("%7.2f dB, %7.2f dB, %10.6f, %10.6f",
+                    gd.album_gain,
+                    gd.track_gain,
+                    gd.album_peak,
+                    gd.track_peak);
+        } else {
+            g_print("%7.2f dB, %10.6f",
+                    gd.track_gain,
+                    gd.track_peak);
+        }
+        if (fln->fr->display[0]) {
+            g_print(", ");
+            print_utf8_string(fln->fr->display);
+        }
+        putchar('\n');
+    }
+}
+
 static int tag_output_state = 0;
 void tag_file(struct filename_list_node *fln, int *ret)
 {
@@ -138,7 +148,7 @@ void tag_file(struct filename_list_node *fln, int *ret)
     if (fd->scanned) {
         int error;
         char *basename, *extension, *filename;
-        struct gain_data gd = { clamp_rg(RG_REFERENCE_LEVEL - fd->loudness),
+        struct gain_data gd = { RG_REFERENCE_LEVEL - fd->loudness,
                                 fd->peak,
                                 !track,
                                 fd->gain_album,
@@ -146,7 +156,7 @@ void tag_file(struct filename_list_node *fln, int *ret)
 
         get_filename_and_extension(fln, &basename, &extension, &filename);
 
-        error = set_rg_info(filename, extension, &gd);
+        error = set_rg_info(filename, extension, &gd, opus_compat);
         if (error) {
             if (tag_output_state == 0) {
                 fflush(stderr);
@@ -166,7 +176,7 @@ void tag_file(struct filename_list_node *fln, int *ret)
 }
 
 int scan_files(GSList *files) {
-    struct scan_opts opts = {FALSE, tag_tp ? "true" : "sample", histogram,
+    struct scan_opts opts = {FALSE, "sample", histogram,
                              TRUE, decode_to_file};
     int do_scan = 0;
 

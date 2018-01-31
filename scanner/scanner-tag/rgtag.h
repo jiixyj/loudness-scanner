@@ -1,7 +1,7 @@
 /* See COPYING file for copyright and license details. */
 
-#ifndef _RGTAG_H_
-#define _RGTAG_H_
+#ifndef RGTAG_H_
+#define RGTAG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,15 +15,22 @@ struct gain_data {
   double album_peak;
 };
 
+void clamp_gain_data(struct gain_data* gd);
+
 int set_rg_info(const char* filename,
                 const char* extension,
-                struct gain_data* gd);
+                struct gain_data* gd,
+                int opus_compat);
 
 int has_rg_info(const char* filename,
                 const char* extension);
+
+void adjust_with_file_gain(struct gain_data* gd,
+                           const char* filename,
+                           const char* extension);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* _RGTAG_H_ */
+#endif  /* RGTAG_H_ */
