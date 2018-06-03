@@ -13,7 +13,11 @@
 #include "ebur128.h"
 #include "input.h"
 
-#define BUFFER_SIZE (192000 + FF_INPUT_BUFFER_PADDING_SIZE)
+#ifndef AV_INPUT_BUFFER_PADDING_SIZE
+#define AV_INPUT_BUFFER_PADDING_SIZE FF_INPUT_BUFFER_PADDING_SIZE
+#endif
+
+#define BUFFER_SIZE (192000 + AV_INPUT_BUFFER_PADDING_SIZE)
 
 static GStaticMutex ffmpeg_mutex = G_STATIC_MUTEX_INIT;
 
@@ -366,8 +370,10 @@ static void ffmpeg_close_file(struct input_handle* ih) {
 }
 
 static int ffmpeg_init_library() {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,9,100)
   // Register all formats and codecs
   av_register_all();
+#endif
   av_log_set_level(AV_LOG_ERROR);
   return 0;
 }
