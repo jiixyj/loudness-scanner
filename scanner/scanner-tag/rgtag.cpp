@@ -134,6 +134,7 @@ static bool tag_id3v2(const char* filename,
                       struct gain_data_strings* gds) {
   TagLib::MPEG::File f(CAST_FILENAME filename);
   TagLib::ID3v2::Tag* id3v2tag = f.ID3v2Tag(true);
+  TagLib::uint version = id3v2tag->header()->majorVersion();
 
   while (clear_txxx_tag(id3v2tag, TagLib::String("replaygain_album_gain").upper()));
   while (clear_txxx_tag(id3v2tag, TagLib::String("replaygain_album_peak").upper()));
@@ -143,14 +144,19 @@ static bool tag_id3v2(const char* filename,
   while (clear_rva2_tag(id3v2tag, TagLib::String("track").upper()));
   set_txxx_tag(id3v2tag, "replaygain_track_gain", gds->track_gain);
   set_txxx_tag(id3v2tag, "replaygain_track_peak", gds->track_peak);
-  set_rva2_tag(id3v2tag, "track", gd->track_gain, gd->track_peak);
+  if (version == 4)
+    set_rva2_tag(id3v2tag, "track", gd->track_gain, gd->track_peak);
   if (gd->album_mode) {
     set_txxx_tag(id3v2tag, "replaygain_album_gain", gds->album_gain);
     set_txxx_tag(id3v2tag, "replaygain_album_peak", gds->album_peak);
-    set_rva2_tag(id3v2tag, "album", gd->album_gain, gd->album_peak);
+    if (version == 4)
+      set_rva2_tag(id3v2tag, "album", gd->album_gain, gd->album_peak);
   }
-
+#if TAGLIB_MAJOR_VERSION > 1 || TAGLIB_MINOR_VERSION > 7
+  return !f.save(TagLib::MPEG::File::ID3v2, false, version);
+#else
   return !f.save(TagLib::MPEG::File::ID3v2, false);
+#endif
 }
 
 static bool has_tag_id3v2(const char* filename) {
