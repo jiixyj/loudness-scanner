@@ -32,7 +32,8 @@ struct input_handle {
   int flushing;
   int got_frame;
   int packet_left;
-  float buffer[BUFFER_SIZE / 2 + 1];
+  float *buffer;
+  unsigned buffer_size;
 };
 
 static unsigned ffmpeg_get_channels(struct input_handle* ih) {
@@ -49,7 +50,7 @@ static float* ffmpeg_get_buffer(struct input_handle* ih) {
 
 static struct input_handle* ffmpeg_handle_init() {
   struct input_handle* ret;
-  ret = malloc(sizeof(struct input_handle));
+  ret = calloc(1, sizeof(struct input_handle));
 
   return ret;
 }
@@ -277,9 +278,15 @@ write_to_buffer: ;
   int channels = ih->codec_context->channels;
   // channels = ih->frame->channels;
 
-  if (ih->frame->nb_samples * channels > sizeof ih->buffer) {
-    fprintf(stderr, "buffer too small!\n");
-    return 0;
+  int data_size = nr_frames_read * channels;
+  if (ih->buffer_size < data_size) {
+    float *b = realloc(ih->buffer, data_size * sizeof(float));
+    if (!b) {
+      perror("realloc() failed");
+      return 0;
+    }
+    ih->buffer = b;
+    ih->buffer_size = data_size;
   }
 
   int i;
@@ -358,8 +365,11 @@ static size_t ffmpeg_read_frames(struct input_handle* ih) {
 }
 
 static void ffmpeg_free_buffer(struct input_handle* ih) {
-  (void) ih;
-  return;
+  if (ih->buffer) {
+    free(ih->buffer);
+    ih->buffer = 0;
+    ih->buffer_size = 0;
+  }
 }
 
 static void ffmpeg_close_file(struct input_handle* ih) {
