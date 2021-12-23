@@ -8,7 +8,7 @@ if(TAGLIB_FOUND AND NOT DISABLE_TAGLIB)
   include_directories(SYSTEM ${GLIB20_INCLUDE_DIRS})
   add_definitions(${GLIB20_CFLAGS_OTHER})
 
-  add_library(scanner-tag scanner-tag rgtag)
+  add_library(scanner-tag scanner-tag.c rgtag.cpp)
   include_directories(${TAGLIB_INCLUDE_DIRS})
   target_link_libraries(scanner-tag scanner-common ${TAGLIB_LIBRARIES})
 endif()

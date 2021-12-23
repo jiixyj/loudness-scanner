@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.8.9)
-
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
   pkg_check_modules(GMODULE20 gmodule-2.0)
@@ -15,7 +13,7 @@ if(GMODULE20_FOUND AND NOT DISABLE_GLIB20)
   link_directories(${GMODULE20_LIBRARY_DIRS})
   add_definitions(${GMODULE20_CFLAGS_OTHER})
 
-  add_library(input input)
+  add_library(input input.c)
 
   target_link_libraries(input ${GMODULE20_LIBRARIES})
 endif()

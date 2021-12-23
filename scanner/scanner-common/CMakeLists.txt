@@ -1,7 +1,7 @@
 include_directories(SYSTEM ${GLIB20_INCLUDE_DIRS})
 add_definitions(${GLIB20_CFLAGS_OTHER})
 
-add_library(scanner-common parse_args nproc scanner-common)
+add_library(scanner-common parse_args.c nproc.c scanner-common.c)
 target_link_libraries(scanner-common ebur128 #
                       ${GLIB20_LIBRARIES} ${GTHREAD20_LIBRARIES})
 

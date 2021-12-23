@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.8.9)
-
 set(SCANNERCOMMON_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/scanner-common
     ${CMAKE_CURRENT_SOURCE_DIR}/scanner-tag
@@ -45,10 +43,10 @@ if(GLIB20_FOUND
   add_subdirectory(scanner-drop-gtk)
   add_subdirectory(scanner-drop-qt)
 
-  add_library(scanner-lib scanner-scan scanner-dump)
+  add_library(scanner-lib scanner-scan.c scanner-dump.c)
   target_link_libraries(scanner-lib scanner-common ebur128)
 
-  add_executable(loudness scanner)
+  add_executable(loudness scanner.c)
   target_link_libraries(loudness scanner-lib filetree input #
                         ${GLIB20_LIBRARIES} ${GTHREAD20_LIBRARIES})
 

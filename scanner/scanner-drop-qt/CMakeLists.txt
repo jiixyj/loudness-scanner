@@ -8,7 +8,7 @@ if(TARGET scanner-tag)
       CACHE INTERNAL "")
 
   if(Qt5_FOUND AND NOT DISABLE_QT5)
-    add_executable(loudness-drop-qt5 scanner-drop-qt)
+    add_executable(loudness-drop-qt5 scanner-drop-qt.cpp)
 
     include_directories(${CMAKE_CURRENT_BINARY_DIR} ${LOGO_INCLUDE_DIR})
     target_link_libraries(
