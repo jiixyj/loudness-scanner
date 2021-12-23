@@ -17,8 +17,8 @@ extern gboolean verbose;
 
 static struct file_data empty;
 
-GMutex *progress_mutex = NULL;
-GCond *progress_cond = NULL;
+GMutex progress_mutex;
+GCond progress_cond;
 guint64 elapsed_frames = 0;
 guint64 total_frames = 0;
 
@@ -27,21 +27,15 @@ scanner_init_common(void)
 {
 	total_frames = 0;
 	elapsed_frames = 0;
-	if (!progress_mutex) {
-		progress_mutex = g_mutex_new();
-	}
-	if (!progress_cond) {
-		progress_cond = g_cond_new();
-	}
 }
 
 void
 scanner_reset_common(void)
 {
-	g_mutex_lock(progress_mutex);
+	g_mutex_lock(&progress_mutex);
 	total_frames = elapsed_frames = 0;
-	g_cond_broadcast(progress_cond);
-	g_mutex_unlock(progress_mutex);
+	g_cond_broadcast(&progress_cond);
+	g_mutex_unlock(&progress_mutex);
 }
 
 int
@@ -52,17 +46,19 @@ open_plugin(char const *raw, char const *display, struct input_ops **ops,
 
 	*ops = input_get_ops(raw);
 	if (!(*ops)) {
-		if (verbose)
+		if (verbose) {
 			fprintf(stderr, "No plugin found for file '%s'\n",
 			    display);
+		}
 		return 1;
 	}
 	*ih = (*ops)->handle_init();
 
 	result = (*ops)->open_file(*ih, raw);
 	if (result) {
-		if (verbose)
+		if (verbose) {
 			fprintf(stderr, "Error opening file '%s'\n", display);
+		}
 		return 1;
 	}
 	return 0;
@@ -88,16 +84,18 @@ init_and_get_number_of_frames(struct filename_list_node *fln, int *do_scan)
 
 	*do_scan = TRUE;
 	fd->number_of_frames = ops->get_total_frames(ih);
-	g_mutex_lock(progress_mutex);
+	g_mutex_lock(&progress_mutex);
 	total_frames += fd->number_of_frames;
-	g_cond_broadcast(progress_cond);
-	g_mutex_unlock(progress_mutex);
+	g_cond_broadcast(&progress_cond);
+	g_mutex_unlock(&progress_mutex);
 
 free:
-	if (!result)
+	if (!result) {
 		ops->close_file(ih);
-	if (ih)
+	}
+	if (ih) {
 		ops->handle_destroy(&ih);
+	}
 }
 
 void
@@ -122,24 +120,30 @@ init_state_and_scan_work_item(struct filename_list_node *fln,
 
 	result = open_plugin(fln->fr->raw, fln->fr->display, &ops, &ih);
 	if (result) {
-		g_mutex_lock(progress_mutex);
+		g_mutex_lock(&progress_mutex);
 		elapsed_frames += fd->number_of_frames;
-		g_cond_broadcast(progress_cond);
-		g_mutex_unlock(progress_mutex);
+		g_cond_broadcast(&progress_cond);
+		g_mutex_unlock(&progress_mutex);
 		goto free;
 	}
 
-	if (opts->lra)
+	if (opts->lra) {
 		r128_mode |= EBUR128_MODE_LRA;
-	if (opts->peak) {
-		if (!strcmp(opts->peak, "sample") || !strcmp(opts->peak, "all"))
-			r128_mode |= EBUR128_MODE_SAMPLE_PEAK;
-		if (!strcmp(opts->peak, "true") ||
-		    !strcmp(opts->peak, "dbtp") || !strcmp(opts->peak, "all"))
-			r128_mode |= EBUR128_MODE_TRUE_PEAK;
 	}
-	if (opts->histogram)
+	if (opts->peak) {
+		if (!strcmp(opts->peak, "sample") ||
+		    !strcmp(opts->peak, "all")) {
+			r128_mode |= EBUR128_MODE_SAMPLE_PEAK;
+		}
+		if (!strcmp(opts->peak, "true") ||
+		    !strcmp(opts->peak, "dbtp") || /**/
+		    !strcmp(opts->peak, "all")) {
+			r128_mode |= EBUR128_MODE_TRUE_PEAK;
+		}
+	}
+	if (opts->histogram) {
 		r128_mode |= EBUR128_MODE_HISTOGRAM;
+	}
 
 	fd->st = ebur128_init(ops->get_channels(ih), ops->get_samplerate(ih),
 	    r128_mode);
@@ -157,8 +161,9 @@ init_state_and_scan_work_item(struct filename_list_node *fln,
 	}
 
 	result = ops->allocate_buffer(ih);
-	if (result)
+	if (result) {
 		abort();
+	}
 	buffer = ops->get_buffer(ih);
 
 #ifdef USE_SNDFILE
@@ -177,10 +182,10 @@ init_state_and_scan_work_item(struct filename_list_node *fln,
 #endif
 
 	while ((nr_frames_read = ops->read_frames(ih))) {
-		g_mutex_lock(progress_mutex);
+		g_mutex_lock(&progress_mutex);
 		elapsed_frames += nr_frames_read;
-		g_cond_broadcast(progress_cond);
-		g_mutex_unlock(progress_mutex);
+		g_cond_broadcast(&progress_cond);
+		g_mutex_unlock(&progress_mutex);
 		fd->number_of_elapsed_frames += nr_frames_read;
 		result = ebur128_add_frames_float(fd->st, buffer,
 		    nr_frames_read);
@@ -188,12 +193,14 @@ init_state_and_scan_work_item(struct filename_list_node *fln,
 		if (opts->decode_file) {
 			if (sf_writef_float(outfile, buffer,
 				(sf_count_t)nr_frames_read) !=
-			    (sf_count_t)nr_frames_read)
+			    (sf_count_t)nr_frames_read) {
 				sf_perror(outfile);
+			}
 		}
 #endif
-		if (result)
+		if (result) {
 			abort();
+		}
 	}
 
 #ifdef USE_SNDFILE
@@ -211,17 +218,18 @@ init_state_and_scan_work_item(struct filename_list_node *fln,
 			    fln->fr->display, fd->number_of_frames,
 			    fd->number_of_elapsed_frames);
 		}
-		g_mutex_lock(progress_mutex);
+		g_mutex_lock(&progress_mutex);
 		total_frames = total_frames + fd->number_of_elapsed_frames -
 		    fd->number_of_frames;
-		g_cond_broadcast(progress_cond);
-		g_mutex_unlock(progress_mutex);
+		g_cond_broadcast(&progress_cond);
+		g_mutex_unlock(&progress_mutex);
 	}
 	ebur128_loudness_global(fd->st, &fd->loudness);
 	if (opts->lra) {
 		result = ebur128_loudness_range(fd->st, &fd->lra);
-		if (result)
+		if (result) {
 			abort();
+		}
 	}
 
 	if ((fd->st->mode & EBUR128_MODE_SAMPLE_PEAK) ==
@@ -245,13 +253,16 @@ init_state_and_scan_work_item(struct filename_list_node *fln,
 	}
 	fd->scanned = TRUE;
 
-	if (ih)
+	if (ih) {
 		ops->free_buffer(ih);
+	}
 free:
-	if (!result)
+	if (!result) {
 		ops->close_file(ih);
-	if (ih)
+	}
+	if (ih) {
 		ops->handle_destroy(&ih);
+	}
 }
 
 void
@@ -287,30 +298,34 @@ get_max_peaks(struct filename_list_node *fln, struct file_data *result)
 	struct file_data *fd = (struct file_data *)fln->d;
 
 	if (fd->scanned) {
-		if (fd->peak > result->peak)
+		if (fd->peak > result->peak) {
 			result->peak = fd->peak;
-		if (fd->true_peak > result->true_peak)
+		}
+		if (fd->true_peak > result->true_peak) {
 			result->true_peak = fd->true_peak;
+		}
 	}
 }
 
 static gpointer
-print_progress_bar(gpointer p_started)
+print_progress_bar(gpointer arg)
 {
-	int percent, bars, i;
+	int percent;
+	int bars;
+	int i;
 	static char progress_bar[81];
 	gint64 last_time = -1;
 
-	int *started = (int *)p_started;
+	int *started = arg;
 
 	for (;;) {
-		g_mutex_lock(progress_mutex);
+		g_mutex_lock(&progress_mutex);
 		// signal calling thread that we are ready
 		if (!*started) {
 			*started = 1;
-			g_cond_broadcast(progress_cond);
+			g_cond_broadcast(&progress_cond);
 		}
-		g_cond_wait(progress_cond, progress_mutex);
+		g_cond_wait(&progress_cond, &progress_mutex);
 
 		/* refresh progress bar at max 10 times per second */
 		gint64 current_time = g_get_monotonic_time();
@@ -318,7 +333,7 @@ print_progress_bar(gpointer p_started)
 		    total_frames == elapsed_frames) {
 			last_time = current_time;
 		} else {
-			g_mutex_unlock(progress_mutex);
+			g_mutex_unlock(&progress_mutex);
 			continue;
 		}
 
@@ -339,14 +354,15 @@ print_progress_bar(gpointer p_started)
 		for (; i < 73; ++i) {
 			progress_bar[i] = ' ';
 		}
-		if (percent >= 0 && percent <= 100)
+		if (percent >= 0 && percent <= 100) {
 			sprintf(&progress_bar[73], "] %3d%%", percent);
+		}
 		fprintf(stderr, "%s\r", progress_bar);
 		if (total_frames == elapsed_frames) {
-			g_mutex_unlock(progress_mutex);
+			g_mutex_unlock(&progress_mutex);
 			break;
 		}
-		g_mutex_unlock(progress_mutex);
+		g_mutex_unlock(&progress_mutex);
 	}
 	return NULL;
 }
@@ -371,12 +387,12 @@ process_files(GSList *files, struct scan_opts *opts)
 
 	// Start the progress bar thread. It misuses progress_mutex and
 	// progress_cond to signal when it is ready.
-	g_mutex_lock(progress_mutex);
-	progress_bar_thread = g_thread_create(print_progress_bar, &started,
-	    TRUE, NULL);
-	while (!started)
-		g_cond_wait(progress_cond, progress_mutex);
-	g_mutex_unlock(progress_mutex);
+	g_mutex_lock(&progress_mutex);
+	progress_bar_thread = g_thread_new(NULL, print_progress_bar, &started);
+	while (!started) {
+		g_cond_wait(&progress_cond, &progress_mutex);
+	}
+	g_mutex_unlock(&progress_mutex);
 
 	pool = g_thread_pool_new((GFunc)init_state_and_scan_work_item, opts,
 	    nproc(), FALSE, NULL);
@@ -388,7 +404,9 @@ process_files(GSList *files, struct scan_opts *opts)
 void
 print_version()
 {
-	int lib_major, lib_minor, lib_patch;
+	int lib_major;
+	int lib_minor;
+	int lib_patch;
 	ebur128_get_version(&lib_major, &lib_minor, &lib_patch);
 	printf("library version: %d.%d.%d\n", lib_major, lib_minor, lib_patch);
 	printf("scanner version: %d.%d.%d\n", LOUDNESS_SCANNER_VERSION_MAJOR,

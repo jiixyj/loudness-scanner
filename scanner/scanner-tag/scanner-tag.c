@@ -93,7 +93,7 @@ calculate_album_gain_and_peak(struct filename_list_node *fln, gpointer unused)
 }
 
 /* must g_free basename and filename */
-void
+static void
 get_filename_and_extension(struct filename_list_node *fln, char **basename,
     char **extension, char **filename)
 {
@@ -246,7 +246,7 @@ tag_files(GSList *files)
 	return ret;
 }
 
-void
+static void
 append_to_untagged_list(struct filename_list_node *fln, GSList **ret)
 {
 	char *basename;

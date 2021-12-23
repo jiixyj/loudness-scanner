@@ -5,8 +5,6 @@
 
 #include <librsvg/rsvg.h>
 
-#include <librsvg/rsvg-cairo.h>
-
 #include <assert.h>
 #include <locale.h>
 #include <stdio.h>
@@ -517,8 +515,8 @@ update_bar(gpointer arg)
 	g_list_free(children);
 
 	for (;;) {
-		g_mutex_lock(progress_mutex);
-		g_cond_wait(progress_cond, progress_mutex);
+		g_mutex_lock(&progress_mutex);
+		g_cond_wait(&progress_cond, &progress_mutex);
 		if (total_frames > 0) {
 			gdk_threads_enter();
 			if (!rotation_active && elapsed_frames) {
@@ -544,7 +542,7 @@ update_bar(gpointer arg)
 			}
 			gdk_threads_leave();
 		}
-		g_mutex_unlock(progress_mutex);
+		g_mutex_unlock(&progress_mutex);
 	}
 
 	return NULL;

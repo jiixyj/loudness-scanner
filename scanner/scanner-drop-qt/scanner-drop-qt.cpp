@@ -495,10 +495,10 @@ void
 GUIUpdateThread::run()
 {
 	for (;;) {
-		g_mutex_lock(progress_mutex);
-		g_cond_wait(progress_cond, progress_mutex);
+		g_mutex_lock(&progress_mutex);
+		g_cond_wait(&progress_cond, &progress_mutex);
 		if (stop_thread_) {
-			g_mutex_unlock(progress_mutex);
+			g_mutex_unlock(&progress_mutex);
 			break;
 		}
 		if (total_frames > 0) {
@@ -521,7 +521,7 @@ GUIUpdateThread::run()
 				emit resetLogo();
 			}
 		}
-		g_mutex_unlock(progress_mutex);
+		g_mutex_unlock(&progress_mutex);
 	}
 }
 
@@ -530,7 +530,7 @@ GUIUpdateThread::stopThread()
 {
 	stop_thread_ = true;
 	while (isRunning()) {
-		g_cond_broadcast(progress_cond);
+		g_cond_broadcast(&progress_cond);
 	}
 }
 

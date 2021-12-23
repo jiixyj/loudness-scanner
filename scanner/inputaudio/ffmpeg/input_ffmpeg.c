@@ -21,6 +21,10 @@
 
 static GMutex ffmpeg_mutex;
 
+// TODO: Fix deprecated FFmpeg API calls.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 struct input_handle {
 	AVFormatContext *format_context;
 	AVCodecContext *codec_context;
@@ -265,7 +269,6 @@ start:
 		goto packet_left;
 	}
 
-next_frame:
 	for (;;) {
 		if (av_read_frame(ih->format_context, &ih->packet) < 0) {
 			ih->flushing = 1;
@@ -313,7 +316,8 @@ write_to_buffer:;
 	int channels = ih->codec_context->channels;
 	// channels = ih->frame->channels;
 
-	if (ih->frame->nb_samples * channels > sizeof ih->buffer) {
+	if (ih->frame->nb_samples * channels >
+	    (int)(sizeof(ih->buffer) / sizeof(*ih->buffer))) {
 		fprintf(stderr, "buffer too small!\n");
 		return 0;
 	}
@@ -392,7 +396,7 @@ write_to_buffer:;
 		goto out;
 	}
 out:
-	return nr_frames_read;
+	return (size_t)nr_frames_read;
 }
 
 static size_t
@@ -431,6 +435,8 @@ static void
 ffmpeg_exit_library(void)
 {
 }
+
+#pragma GCC diagnostic pop
 
 G_MODULE_EXPORT struct input_ops ip_ops = { ffmpeg_get_channels,
 	ffmpeg_get_samplerate, ffmpeg_get_buffer, ffmpeg_handle_init,

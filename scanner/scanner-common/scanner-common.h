@@ -42,8 +42,8 @@ struct scan_opts {
 	gchar *decode_file;
 };
 
-extern GMutex *progress_mutex;
-extern GCond *progress_cond;
+extern GMutex progress_mutex;
+extern GCond progress_cond;
 extern guint64 elapsed_frames;
 extern guint64 total_frames;
 

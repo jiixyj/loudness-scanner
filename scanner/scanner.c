@@ -145,9 +145,12 @@ enum modes { LOUDNESS_MODE_SCAN, LOUDNESS_MODE_TAG, LOUDNESS_MODE_DUMP };
 int
 main(int argc, char *argv[])
 {
-	GSList *errors = NULL, *files = NULL;
+	GSList *errors = NULL;
+	GSList *files = NULL;
 	Filetree tree;
-	int mode = 0, mode_parsed = FALSE, ret = 0;
+	int mode = 0;
+	int mode_parsed = FALSE;
+	int ret = 0;
 
 	if (parse_global_args(&argc, &argv, entries, TRUE) || argc < 2 ||
 	    help) {
@@ -179,7 +182,6 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	g_thread_init(NULL);
 	input_init(argv[0], forced_plugin);
 	scanner_init_common();
 

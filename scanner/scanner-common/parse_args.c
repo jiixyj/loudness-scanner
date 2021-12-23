@@ -76,8 +76,9 @@ parse_mode_args(int *argc, char **argv[], GOptionEntry *entries)
 		return FALSE;
 	}
 	g_option_context_free(context);
-	if (*argc > 1 && !strcmp((*argv)[1], "--"))
+	if (*argc > 1 && !strcmp((*argv)[1], "--")) {
 		shift_arguments(argc, argv);
+	}
 	if (*argc == 1) {
 		return FALSE;
 	}
