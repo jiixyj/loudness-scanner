@@ -103,8 +103,7 @@ static void set_rva2_tag(TagLib::ID3v2::Tag* tag, std::string tag_name, double g
     rva2->setIdentification(tag_name);
     tag->addFrame(rva2);
   }
-  rva2->setChannelType(TagLib::ID3v2::RelativeVolumeFrame::MasterVolume);
-  rva2->setVolumeAdjustment(float(gain));
+  rva2->setVolumeAdjustment(float(gain), TagLib::ID3v2::RelativeVolumeFrame::MasterVolume);
 
   TagLib::ID3v2::RelativeVolumeFrame::PeakVolume peak_volume;
   peak_volume.bitsRepresentingPeak = 16;
@@ -135,6 +134,9 @@ static bool tag_id3v2(const char* filename,
   TagLib::MPEG::File f(CAST_FILENAME filename);
   TagLib::ID3v2::Tag* id3v2tag = f.ID3v2Tag(true);
   TagLib::uint version = id3v2tag->header()->majorVersion();
+  if (version > 4) {
+    return 1;
+  }
 
   while (clear_txxx_tag(id3v2tag, TagLib::String("replaygain_album_gain").upper()));
   while (clear_txxx_tag(id3v2tag, TagLib::String("replaygain_album_peak").upper()));
@@ -152,11 +154,8 @@ static bool tag_id3v2(const char* filename,
     if (version == 4)
       set_rva2_tag(id3v2tag, "album", gd->album_gain, gd->album_peak);
   }
-#if TAGLIB_MAJOR_VERSION > 1 || TAGLIB_MINOR_VERSION > 7
-  return !f.save(TagLib::MPEG::File::ID3v2, false, version);
-#else
-  return !f.save(TagLib::MPEG::File::ID3v2, false);
-#endif
+  return !f.save(TagLib::MPEG::File::ID3v2, TagLib::File::StripTags::StripNone,
+      version <= 3 ? TagLib::ID3v2::Version::v3 : TagLib::ID3v2::Version::v4);
 }
 
 static bool has_tag_id3v2(const char* filename) {
@@ -447,15 +446,14 @@ static bool tag_mp4(const char* filename,
   if (!t) {
     return 1;
   }
-  TagLib::MP4::ItemListMap& ilm = t->itemListMap();
-  ilm["----:com.apple.iTunes:replaygain_track_gain"] = TagLib::MP4::Item(TagLib::StringList(gds->track_gain));
-  ilm["----:com.apple.iTunes:replaygain_track_peak"] = TagLib::MP4::Item(TagLib::StringList(gds->track_peak));
+  t->setItem("----:com.apple.iTunes:replaygain_track_gain", TagLib::StringList(gds->track_gain));
+  t->setItem("----:com.apple.iTunes:replaygain_track_peak", TagLib::StringList(gds->track_peak));
   if (gd->album_mode) {
-    ilm["----:com.apple.iTunes:replaygain_album_gain"] = TagLib::MP4::Item(TagLib::StringList(gds->album_gain));
-    ilm["----:com.apple.iTunes:replaygain_album_peak"] = TagLib::MP4::Item(TagLib::StringList(gds->album_peak));
+    t->setItem("----:com.apple.iTunes:replaygain_album_gain", TagLib::StringList(gds->album_gain));
+    t->setItem("----:com.apple.iTunes:replaygain_album_peak", TagLib::StringList(gds->album_peak));
   } else {
-    ilm.erase("----:com.apple.iTunes:replaygain_album_gain");
-    ilm.erase("----:com.apple.iTunes:replaygain_album_peak");
+    t->removeItem("----:com.apple.iTunes:replaygain_album_gain");
+    t->removeItem("----:com.apple.iTunes:replaygain_album_peak");
   }
   return !f.save();
 }
@@ -467,7 +465,7 @@ static bool has_tag_mp4(const char* filename) {
     std::cerr << "Error reading mp4 tag" << std::endl;
     return false;
   }
-  TagLib::MP4::ItemListMap& ilm = t->itemListMap();
+  TagLib::MP4::ItemMap const& ilm = t->itemMap();
 
   TagLib::uint fieldCount = ilm.size();
 
@@ -490,12 +488,12 @@ static bool has_tag_mp4(const char* filename) {
     }
   }
 
-  ilm.erase("----:com.apple.iTunes:replaygain_album_gain");
-  ilm.erase("----:com.apple.iTunes:replaygain_album_peak");
-  ilm.erase("----:com.apple.iTunes:replaygain_track_gain");
-  ilm.erase("----:com.apple.iTunes:replaygain_track_peak");
+  t->removeItem("----:com.apple.iTunes:replaygain_album_gain");
+  t->removeItem("----:com.apple.iTunes:replaygain_album_peak");
+  t->removeItem("----:com.apple.iTunes:replaygain_track_gain");
+  t->removeItem("----:com.apple.iTunes:replaygain_track_peak");
 
-  bool has_tag = ilm.size() < fieldCount;
+  bool has_tag = t->itemMap().size() < fieldCount;
   return has_tag;
 }
 
