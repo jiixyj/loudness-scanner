@@ -32,19 +32,8 @@ static GOptionEntry entries[] = { { "track", 't', 0, G_OPTION_ARG_NONE, &track,
 	    NULL },
 	{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, 0 } };
 
-double
-clamp_rg(double x)
-{
-	if (x < -51.0)
-		return -51.0;
-	else if (x > 51.0)
-		return 51.0;
-	else
-		return x;
-}
-
 static void
-fill_album_data(struct filename_list_node *fln, double *album_data)
+fill_album_data(struct filename_list_node *fln, double const *album_data)
 {
 	struct file_data *fd = (struct file_data *)fln->d;
 
@@ -110,10 +99,11 @@ get_filename_and_extension(struct filename_list_node *fln, char **basename,
 {
 	*basename = g_path_get_basename(fln->fr->raw);
 	*extension = strrchr(*basename, '.');
-	if (*extension)
+	if (*extension) {
 		++*extension;
-	else
+	} else {
 		*extension = "";
+	}
 #ifdef G_OS_WIN32
 	*filename = (char *)g_utf8_to_utf16(fln->fr->raw, -1, NULL, NULL, NULL);
 #else
@@ -128,11 +118,20 @@ print_file_data(struct filename_list_node *fln, gpointer unused)
 
 	(void)unused;
 	if (fd->scanned) {
-		struct gain_data gd = { RG_REFERENCE_LEVEL - fd->loudness,
-			fd->peak, !track, fd->gain_album, fd->peak_album };
-		char *basename, *extension, *filename;
+		struct gain_data gd = {
+			RG_REFERENCE_LEVEL - fd->loudness,
+			fd->peak,
+			!track,
+			fd->gain_album,
+			fd->peak_album,
+		};
+
+		char *basename;
+		char *extension;
+		char *filename;
 		get_filename_and_extension(fln, &basename, &extension,
 		    &filename);
+
 		clamp_gain_data(&gd);
 
 		g_free(basename);
@@ -161,10 +160,18 @@ tag_file(struct filename_list_node *fln, int *ret)
 	struct file_data *fd = (struct file_data *)fln->d;
 	if (fd->scanned) {
 		int error;
-		char *basename, *extension, *filename;
-		struct gain_data gd = { RG_REFERENCE_LEVEL - fd->loudness,
-			fd->peak, !track, fd->gain_album, fd->peak_album };
 
+		struct gain_data gd = {
+			RG_REFERENCE_LEVEL - fd->loudness,
+			fd->peak,
+			!track,
+			fd->gain_album,
+			fd->peak_album,
+		};
+
+		char *basename;
+		char *extension;
+		char *filename;
 		get_filename_and_extension(fln, &basename, &extension,
 		    &filename);
 
@@ -231,8 +238,9 @@ tag_files(GSList *files)
 
 	fprintf(stderr, "Tagging");
 	g_slist_foreach(files, (GFunc)tag_file, &ret);
-	if (!ret)
+	if (!ret) {
 		fprintf(stderr, " Success!");
+	}
 	fputc('\n', stderr);
 
 	return ret;
@@ -241,7 +249,9 @@ tag_files(GSList *files)
 void
 append_to_untagged_list(struct filename_list_node *fln, GSList **ret)
 {
-	char *basename, *extension, *filename;
+	char *basename;
+	char *extension;
+	char *filename;
 	get_filename_and_extension(fln, &basename, &extension, &filename);
 
 	if (!has_rg_info(filename, extension, opus_compat)) {
@@ -275,8 +285,9 @@ loudness_tag_parse(int *argc, char **argv[])
 {
 	gboolean success = parse_mode_args(argc, argv, entries);
 	if (!success) {
-		if (*argc == 1)
+		if (*argc == 1) {
 			fprintf(stderr, "Missing arguments\n");
+		}
 		return FALSE;
 	}
 	return TRUE;

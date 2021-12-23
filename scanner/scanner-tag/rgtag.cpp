@@ -301,7 +301,7 @@ adjust_gain_data(struct gain_data *gd, double opus_correction_db)
 	}
 }
 
-static double
+double
 clamp_rg(double x)
 {
 	if (x < -51.0) {

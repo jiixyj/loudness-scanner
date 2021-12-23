@@ -17,6 +17,7 @@ struct gain_data {
 	double album_peak;
 };
 
+double clamp_rg(double x);
 void clamp_gain_data(struct gain_data *gd);
 
 int set_rg_info(char const *filename, char const *extension,
