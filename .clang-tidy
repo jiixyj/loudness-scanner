@@ -24,6 +24,7 @@ performance-*,\
 -performance-inefficient-string-concatenation,\
 -performance-inefficient-vector-operation,\
 -performance-move-const-arg,\
+-performance-no-int-to-ptr, \
 readability-*,\
 -readability-function-size,\
 -readability-function-cognitive-complexity,\

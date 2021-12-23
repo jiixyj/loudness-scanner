@@ -199,13 +199,11 @@ tag_files_and_update_model(GtkWidget *tag_button, struct work_data *wd)
 			if (!fd->tagged) {
 				ret = 0;
 				tag_file(fln, &ret);
-				if (!ret)
-					fd->tagged = 1;
-				else
-					fd->tagged = 2;
+				fd->tagged = !ret ? 1 : 2;
 				gtk_widget_queue_draw(wd->result_window);
-				while (gtk_events_pending())
+				while (gtk_events_pending()) {
 					gtk_main_iteration();
+				}
 			}
 		}
 		files = g_slist_next(files);
@@ -229,8 +227,9 @@ static gint
 icon_sort(GtkTreeModel *tree_model, GtkTreeIter *a, GtkTreeIter *b,
     gpointer data)
 {
-	gpointer aa, bb;
+	gpointer aa;
 	gtk_tree_model_get(tree_model, a, GPOINTER_TO_INT(data), &aa, -1);
+	gpointer bb;
 	gtk_tree_model_get(tree_model, b, GPOINTER_TO_INT(data), &bb, -1);
 	return *((int *)aa) - *((int *)bb);
 }
@@ -239,8 +238,9 @@ static gint
 filename_sort(GtkTreeModel *tree_model, GtkTreeIter *a, GtkTreeIter *b,
     gpointer data)
 {
-	gchar *aa, *bb;
+	gchar *aa;
 	gtk_tree_model_get(tree_model, a, GPOINTER_TO_INT(data), &aa, -1);
+	gchar *bb;
 	gtk_tree_model_get(tree_model, b, GPOINTER_TO_INT(data), &bb, -1);
 	return strcmp(aa, bb);
 }
@@ -253,8 +253,12 @@ show_result_list(struct work_data *wd)
 	GtkWidget *sw;
 	GtkWidget *treeview;
 
-	GtkWidget *lower_box, *lower_box_fill;
-	GtkWidget *button_box, *tag_button, *ok_button;
+	GtkWidget *lower_box;
+	GtkWidget *lower_box_fill;
+
+	GtkWidget *button_box;
+	GtkWidget *tag_button;
+	GtkWidget *ok_button;
 
 	gdk_threads_enter();
 	wd->result_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -303,7 +307,7 @@ show_result_list(struct work_data *wd)
 	wd->tag_model = model;
 	g_signal_connect(tag_button, "clicked",
 	    G_CALLBACK(tag_files_and_update_model), wd);
-	lower_box_fill = gtk_alignment_new(0, 0.5f, 1, 1);
+	lower_box_fill = gtk_alignment_new(0, 0.5F, 1, 1);
 	button_box = gtk_hbutton_box_new();
 	gtk_container_add(GTK_CONTAINER(button_box), tag_button);
 	gtk_container_add(GTK_CONTAINER(button_box), ok_button);
@@ -362,8 +366,10 @@ static void
 handle_data_received(GtkWidget *widget, GdkDragContext *drag_context, gint x,
     gint y, GtkSelectionData *data, guint info, guint time, gpointer unused)
 {
-	guint i, no_uris;
-	gchar **uris, **files;
+	guint i;
+	guint no_uris;
+	gchar **uris;
+	gchar **files;
 	struct work_data *sl;
 
 	(void)widget;
@@ -440,8 +446,9 @@ static gboolean
 rotate_logo(GtkWidget *widget)
 {
 	rotation_state += G_PI / 20;
-	if (rotation_state >= 2.0 * G_PI)
+	if (rotation_state >= 2.0 * G_PI) {
 		rotation_state = 0.0;
+	}
 	gtk_widget_queue_draw(widget);
 	if (!rotation_active) {
 		rotation_state = 0.0;
@@ -459,7 +466,8 @@ handle_expose(GtkWidget *widget, GdkEventExpose *event, RsvgHandle *rh)
 	static double scale_factor;
 	static RsvgDimensionData rdd;
 
-	double new_width, new_height;
+	double new_width;
+	double new_height;
 	cairo_t *cr = gdk_cairo_create(widget->window);
 	(void)event;
 
@@ -489,7 +497,8 @@ handle_expose(GtkWidget *widget, GdkEventExpose *event, RsvgHandle *rh)
 static gpointer
 update_bar(GtkWidget *widget)
 {
-	double frac, new_frac;
+	double frac;
+	double new_frac;
 	GtkWidget *vbox = gtk_bin_get_child(GTK_BIN(widget));
 	GList *children = gtk_container_get_children(GTK_CONTAINER(vbox));
 	GtkWidget *progress_bar = GTK_IS_PROGRESS_BAR(children->data) ?
