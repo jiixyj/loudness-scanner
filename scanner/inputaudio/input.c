@@ -5,7 +5,7 @@
 #include <gmodule.h>
 #include <stdio.h>
 
-static char const *plugin_names[] = { "input_sndfile", "input_ffmpeg", NULL };
+static char const *plugin_names[] = { "input_ffmpeg", "input_sndfile", NULL };
 
 static char const *plugin_search_dirs[] = { ".", "r128", "",
 	NULL, /* = g_path_get_dirname(av0); */
