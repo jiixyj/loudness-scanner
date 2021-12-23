@@ -19,7 +19,7 @@
 
 #define BUFFER_SIZE (192000 + AV_INPUT_BUFFER_PADDING_SIZE)
 
-static GStaticMutex ffmpeg_mutex = G_STATIC_MUTEX_INIT;
+static GMutex ffmpeg_mutex;
 
 struct input_handle {
 	AVFormatContext *format_context;
@@ -75,18 +75,18 @@ ffmpeg_open_file(struct input_handle *ih, char const *filename)
 {
 	size_t j;
 
-	g_static_mutex_lock(&ffmpeg_mutex);
+	g_mutex_lock(&ffmpeg_mutex);
 	ih->format_context = NULL;
 
 	if (avformat_open_input(&ih->format_context, filename, NULL, NULL) !=
 	    0) {
 		fprintf(stderr, "Could not open input file!\n");
-		g_static_mutex_unlock(&ffmpeg_mutex);
+		g_mutex_unlock(&ffmpeg_mutex);
 		return 1;
 	}
 	if (avformat_find_stream_info(ih->format_context, 0) < 0) {
 		fprintf(stderr, "Could not find stream info!\n");
-		g_static_mutex_unlock(&ffmpeg_mutex);
+		g_mutex_unlock(&ffmpeg_mutex);
 		goto close_file;
 	}
 	// av_dump_format(ih->format_context, 0, "blub", 0);
@@ -102,7 +102,7 @@ ffmpeg_open_file(struct input_handle *ih, char const *filename)
 	}
 	if (ih->audio_stream == -1) {
 		fprintf(stderr, "Could not find an audio stream in file!\n");
-		g_static_mutex_unlock(&ffmpeg_mutex);
+		g_mutex_unlock(&ffmpeg_mutex);
 		goto close_file;
 	}
 	// Get a pointer to the codec context for the audio stream
@@ -122,7 +122,7 @@ ffmpeg_open_file(struct input_handle *ih, char const *filename)
 	if (ih->codec == NULL) {
 		fprintf(stderr,
 		    "Could not find a decoder for the audio format!\n");
-		g_static_mutex_unlock(&ffmpeg_mutex);
+		g_mutex_unlock(&ffmpeg_mutex);
 		goto close_file;
 	}
 
@@ -131,14 +131,15 @@ ffmpeg_open_file(struct input_handle *ih, char const *filename)
 	sprintf(float_codec, "%sfloat", ih->codec->name);
 	AVCodec *possible_float_codec = avcodec_find_decoder_by_name(
 	    float_codec);
-	if (possible_float_codec)
+	if (possible_float_codec) {
 		ih->codec = possible_float_codec;
+	}
 	g_free(float_codec);
 
 	// Open codec
 	if (avcodec_open2(ih->codec_context, ih->codec, NULL) < 0) {
 		fprintf(stderr, "Could not open the codec!\n");
-		g_static_mutex_unlock(&ffmpeg_mutex);
+		g_mutex_unlock(&ffmpeg_mutex);
 		goto close_file;
 	}
 
@@ -149,7 +150,7 @@ ffmpeg_open_file(struct input_handle *ih, char const *filename)
 #endif
 	if (!ih->frame) {
 		fprintf(stderr, "Could not allocate frame!\n");
-		g_static_mutex_unlock(&ffmpeg_mutex);
+		g_mutex_unlock(&ffmpeg_mutex);
 		goto close_file;
 	}
 
@@ -157,7 +158,7 @@ ffmpeg_open_file(struct input_handle *ih, char const *filename)
 	ih->packet.data = NULL;
 	ih->orig_packet.size = 0;
 
-	g_static_mutex_unlock(&ffmpeg_mutex);
+	g_mutex_unlock(&ffmpeg_mutex);
 
 	ih->flushing = 0;
 	ih->got_frame = 0;
@@ -166,52 +167,49 @@ ffmpeg_open_file(struct input_handle *ih, char const *filename)
 	return 0;
 
 close_file:
-	g_static_mutex_lock(&ffmpeg_mutex);
+	g_mutex_lock(&ffmpeg_mutex);
 	avformat_close_input(&ih->format_context);
-	g_static_mutex_unlock(&ffmpeg_mutex);
+	g_mutex_unlock(&ffmpeg_mutex);
 	return 1;
 }
 
 static int
 ffmpeg_set_channel_map(struct input_handle *ih, int *st)
 {
-	if (ih->codec_context->channel_layout) {
-		unsigned int channel_map_index = 0;
-		int bit_counter = 0;
-		while (
-		    channel_map_index < (unsigned)ih->codec_context->channels) {
-			if (ih->codec_context->channel_layout &
-			    (1 << bit_counter)) {
-				switch (1 << bit_counter) {
-				case AV_CH_FRONT_LEFT:
-					st[channel_map_index] = EBUR128_LEFT;
-					break;
-				case AV_CH_FRONT_RIGHT:
-					st[channel_map_index] = EBUR128_RIGHT;
-					break;
-				case AV_CH_FRONT_CENTER:
-					st[channel_map_index] = EBUR128_CENTER;
-					break;
-				case AV_CH_BACK_LEFT:
-					st[channel_map_index] =
-					    EBUR128_LEFT_SURROUND;
-					break;
-				case AV_CH_BACK_RIGHT:
-					st[channel_map_index] =
-					    EBUR128_RIGHT_SURROUND;
-					break;
-				default:
-					st[channel_map_index] = EBUR128_UNUSED;
-					break;
-				}
-				++channel_map_index;
-			}
-			++bit_counter;
-		}
-		return 0;
-	} else {
+	if (!ih->codec_context->channel_layout) {
 		return 1;
 	}
+
+	unsigned int channel_map_index = 0;
+	int bit_counter = 0;
+	while (channel_map_index < (unsigned)ih->codec_context->channels) {
+		if (ih->codec_context->channel_layout & (1 << bit_counter)) {
+			switch (1 << bit_counter) {
+			case AV_CH_FRONT_LEFT:
+				st[channel_map_index] = EBUR128_LEFT;
+				break;
+			case AV_CH_FRONT_RIGHT:
+				st[channel_map_index] = EBUR128_RIGHT;
+				break;
+			case AV_CH_FRONT_CENTER:
+				st[channel_map_index] = EBUR128_CENTER;
+				break;
+			case AV_CH_BACK_LEFT:
+				st[channel_map_index] = EBUR128_LEFT_SURROUND;
+				break;
+			case AV_CH_BACK_RIGHT:
+				st[channel_map_index] = EBUR128_RIGHT_SURROUND;
+				break;
+			default:
+				st[channel_map_index] = EBUR128_UNUSED;
+				break;
+			}
+			++channel_map_index;
+		}
+		++bit_counter;
+	}
+
+	return 0;
 }
 
 static int
@@ -232,11 +230,7 @@ ffmpeg_get_total_frames(struct input_handle *ih)
 		->time_base.den *
 	    (double)ih->codec_context->sample_rate;
 
-	if (tmp <= 0.0) {
-		return 0;
-	} else {
-		return (size_t)(tmp + 0.5);
-	}
+	return tmp <= 0.0 ? 0 : (size_t)(tmp + 0.5);
 }
 
 static int
@@ -263,13 +257,13 @@ start:
 		decode_packet(ih);
 		if (!ih->got_frame) {
 			return 0;
-		} else {
-			goto write_to_buffer;
 		}
+		goto write_to_buffer;
 	}
 
-	if (ih->packet_left)
+	if (ih->packet_left) {
 		goto packet_left;
+	}
 
 next_frame:
 	for (;;) {
@@ -280,17 +274,17 @@ next_frame:
 		if (ih->packet.stream_index != ih->audio_stream) {
 			av_free_packet(&ih->packet);
 			continue;
-		} else {
-			break;
 		}
+		break;
 	}
 
 	int ret;
 	ih->orig_packet = ih->packet;
 packet_left:
 	ret = decode_packet(ih);
-	if (ret < 0)
+	if (ret < 0) {
 		goto free_packet;
+	}
 	ih->packet.data += ret;
 	ih->packet.size -= ret;
 	if (ih->packet.size > 0) {
@@ -301,8 +295,9 @@ packet_left:
 		ih->packet_left = 0;
 	}
 
-	if (!ih->got_frame)
+	if (!ih->got_frame) {
 		goto start;
+	}
 
 write_to_buffer:;
 	int nr_frames_read = ih->frame->nb_samples;
@@ -378,8 +373,8 @@ write_to_buffer:;
 			int current_channel = i / ih->frame->nb_samples;
 			int current_sample = i % ih->frame->nb_samples;
 			ih->buffer[current_sample * channels +
-			    current_channel] =
-			    ((float *)ed[current_channel])[current_sample];
+			    current_channel] = ((float *)/**/
+			    ed[current_channel])[current_sample];
 		}
 		break;
 	case AV_SAMPLE_FMT_DBLP:
@@ -387,8 +382,8 @@ write_to_buffer:;
 			int current_channel = i / ih->frame->nb_samples;
 			int current_sample = i % ih->frame->nb_samples;
 			ih->buffer[current_sample * channels +
-			    current_channel] =
-			    ((double *)ed[current_channel])[current_sample];
+			    current_channel] = (float)((double *)
+				ed[current_channel])[current_sample];
 		}
 		break;
 	default:
@@ -415,10 +410,10 @@ ffmpeg_free_buffer(struct input_handle *ih)
 static void
 ffmpeg_close_file(struct input_handle *ih)
 {
-	g_static_mutex_lock(&ffmpeg_mutex);
+	g_mutex_lock(&ffmpeg_mutex);
 	avcodec_close(ih->codec_context);
 	avformat_close_input(&ih->format_context);
-	g_static_mutex_unlock(&ffmpeg_mutex);
+	g_mutex_unlock(&ffmpeg_mutex);
 }
 
 static int
