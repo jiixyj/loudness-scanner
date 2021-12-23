@@ -46,7 +46,7 @@ struct work_data {
 	GtkTreeModel *tag_model;
 };
 
-static GStaticMutex thread_mutex = G_STATIC_MUTEX_INIT;
+static GMutex thread_mutex;
 static GThread *worker_thread;
 
 
@@ -349,9 +349,9 @@ do_work(struct work_data *wd)
 		destroy_work_data(wd);
 	}
 
-	g_static_mutex_lock(&thread_mutex);
+	g_mutex_lock(&thread_mutex);
 	worker_thread = NULL;
-	g_static_mutex_unlock(&thread_mutex);
+	g_mutex_unlock(&thread_mutex);
 
 	return NULL;
 }
@@ -372,13 +372,13 @@ handle_data_received(GtkWidget *widget, GdkDragContext *drag_context, gint x,
 	(void)info;
 	(void)unused;
 
-	g_static_mutex_lock(&thread_mutex);
+	g_mutex_lock(&thread_mutex);
 	if (worker_thread) {
-		g_static_mutex_unlock(&thread_mutex);
+		g_mutex_unlock(&thread_mutex);
 		gtk_drag_finish(drag_context, FALSE, FALSE, time);
 		return;
 	}
-	g_static_mutex_unlock(&thread_mutex);
+	g_mutex_unlock(&thread_mutex);
 	uris = g_uri_list_extract_uris(
 	    (gchar const *)gtk_selection_data_get_data(data));
 	no_uris = g_strv_length(uris);
