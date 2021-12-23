@@ -52,9 +52,8 @@ clear_txxx_tag(TagLib::ID3v2::Tag *tag, TagLib::String const &tag_name,
 {
 	TagLib::ID3v2::FrameList l = tag->frameList("TXXX");
 	for (auto *it : l) {
-		auto *fr =
-		    dynamic_cast<TagLib::ID3v2::UserTextIdentificationFrame *>(
-			it);
+		auto *fr = dynamic_cast</**/
+		    TagLib::ID3v2::UserTextIdentificationFrame *>(it);
 		if (fr && fr->description().upper() == tag_name) {
 			if (old_content) {
 				*old_content = parse_string_to_float(
@@ -334,30 +333,29 @@ tag_vorbis_comment(char const *filename, char const *extension,
 	struct gain_data_strings gds_opus(&gd_opus);
 
 	if (is_opus) {
-		TagLib::ByteVector header =
-		    static_cast<TagLib::Ogg::Opus::File *>(p.first)->packet(0);
-
 		double opus_header_gain = /**/
 		    (gd->album_mode ? gd->album_gain : gd->track_gain) - 5.0;
 
 		int16_t opus_header_gain_int = to_opus_gain(opus_header_gain);
-		double opus_correction_db = -opus_header_gain_int / 256.0;
+
+		{
+			auto *opus_file = /**/
+			    static_cast<TagLib::Ogg::Opus::File *>(p.first);
+			TagLib::ByteVector header = opus_file->packet(0);
+			header[16] = static_cast<char>(
+			    static_cast<uint16_t>(opus_header_gain_int) & 0xff);
+			header[17] = static_cast<char>(
+			    static_cast<uint16_t>(opus_header_gain_int) >> 8);
+			opus_file->setPacket(0, header);
+		}
 
 		gd_opus = *gd;
-		adjust_gain_data(&gd_opus, opus_correction_db);
+		adjust_gain_data(&gd_opus, -opus_header_gain_int / 256.0);
 
-		int16_t opus_r128_album_gain_int = to_opus_gain(
-		    gd_opus.album_gain - 5.0);
-		int16_t opus_r128_track_gain_int = to_opus_gain(
-		    gd_opus.track_gain - 5.0);
-
-		header[16] = static_cast<char>(
-		    static_cast<uint16_t>(opus_header_gain_int) & 0xff);
-		header[17] = static_cast<char>(
-		    static_cast<uint16_t>(opus_header_gain_int) >> 8);
-
-		static_cast<TagLib::Ogg::Opus::File *>(p.first)->setPacket(0,
-		    header);
+		int16_t opus_r128_album_gain_int = /**/
+		    to_opus_gain(gd_opus.album_gain - 5.0);
+		int16_t opus_r128_track_gain_int = /**/
+		    to_opus_gain(gd_opus.track_gain - 5.0);
 
 		p.second->addField("R128_TRACK_GAIN",
 		    std::to_string(opus_r128_track_gain_int));
