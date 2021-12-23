@@ -16,7 +16,6 @@ set(DISABLE_TAGLIB          OFF CACHE BOOL "Don't build with taglib")
 set(DISABLE_FFMPEG          OFF CACHE BOOL "Don't build with ffmpeg")
 set(DISABLE_RSVG2           OFF CACHE BOOL "Don't build with rsvg2")
 set(DISABLE_GTK2            OFF CACHE BOOL "Don't build with gtk2")
-set(DISABLE_QT4             OFF CACHE BOOL "Don't build with qt4")
 set(DISABLE_QT5             OFF CACHE BOOL "Don't build with qt5")
 
 
@@ -27,10 +26,10 @@ add_subdirectory(scanner)
 to_yes_no(SUMMARY_HAS_QUEUE SUMMARY_GLIB20_FOUND
           SUMMARY_GTHREAD20_FOUND SUMMARY_SNDFILE_FOUND SUMMARY_TAGLIB_FOUND
           SUMMARY_FFMPEG_FOUND SUMMARY_RSVG2_FOUND SUMMARY_GTK2_FOUND
-          SUMMARY_QT4_FOUND SUMMARY_QT5_FOUND)
+          SUMMARY_QT5_FOUND)
 to_yes_no(DISABLE_GLIB20 DISABLE_SNDFILE DISABLE_TAGLIB
           DISABLE_FFMPEG
-          DISABLE_RSVG2 DISABLE_GTK2 DISABLE_QT4 DISABLE_QT5)
+          DISABLE_RSVG2 DISABLE_GTK2 DISABLE_QT5)
 
 if(ENABLE_INTERNAL_QUEUE_H)
     set(USE_QUEUE "using own copy of queue.h")
@@ -48,7 +47,6 @@ message(STATUS "taglib:         ${SUMMARY_TAGLIB_FOUND}"     "     ${DISABLE_TAG
 message(STATUS "ffmpeg:         ${SUMMARY_FFMPEG_FOUND}"     "     ${DISABLE_FFMPEG}")
 message(STATUS "rsvg2:          ${SUMMARY_RSVG2_FOUND}"      "     ${DISABLE_RSVG2}")
 message(STATUS "gtk2:           ${SUMMARY_GTK2_FOUND}"       "     ${DISABLE_GTK2}")
-message(STATUS "qt4:            ${SUMMARY_QT4_FOUND}"        "     ${DISABLE_QT4}")
 message(STATUS "qt5:            ${SUMMARY_QT5_FOUND}"        "     ${DISABLE_QT5}")
 
 
