@@ -5,12 +5,7 @@
 #include <gmodule.h>
 #include <stdio.h>
 
-static char const *plugin_names[] = { "input_sndfile", "input_mpg123",
-	"input_musepack", "input_ffmpeg",
-#ifndef GSTREAMER_INPUT_STATIC
-	"input_gstreamer",
-#endif
-	NULL };
+static char const *plugin_names[] = { "input_sndfile", "input_ffmpeg", NULL };
 
 static char const *plugin_search_dirs[] = { ".", "r128", "",
 	NULL, /* = g_path_get_dirname(av0); */
@@ -104,12 +99,7 @@ input_init(char *exe_name, char const *forced_plugin)
 		plugin_exts = g_slist_append(plugin_exts, exts);
 		++cur_plugin_name;
 	}
-#ifdef GSTREAMER_INPUT_STATIC
-	plugin_ops = g_slist_append(plugin_ops, &gstreamer_ip_ops);
-	plugin_exts = g_slist_append(plugin_exts, &gstreamer_ip_exts);
-	gstreamer_ip_ops.init_library();
-	plugin_found = 1;
-#endif
+
 	g_free(exe_dir);
 	g_strfreev(env_path_split);
 	if (!plugin_found) {
@@ -125,9 +115,7 @@ input_deinit(void)
 	/* unload plugins */
 	GSList *ops = plugin_ops;
 	GSList *modules = g_modules;
-#ifdef GSTREAMER_INPUT_STATIC
-	gstreamer_ip_ops.exit_library();
-#endif
+
 	while (ops && modules) {
 		if (ops->data && modules->data) {
 			((struct input_ops *)ops->data)->exit_library();

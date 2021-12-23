@@ -27,15 +27,16 @@ Requirements
 - taglib
 
 input plugins (all optional):
-- gstreamer
+
 - libsndfile
-- libmpg123
 - ffmpeg
-- libmpcdec
 
 optional GUI frontends:
+
 - GTK2
+
 or
+
 - Qt
 
 
@@ -62,7 +63,7 @@ Usage
 Run "loudness scan" with the files you want to scan as arguments. The scanner
 will automatically choose the best input plugin for each file. You can force an
 input plugin with the command line option "--force-plugin=PLUGIN", where PLUGIN
-is one of gstreamer, sndfile, mpg123, musepack or ffmpeg.
+is one of `sndfile` or `ffmpeg`.
 
 The scanner also support ReplayGain tagging. Run it like this:
 

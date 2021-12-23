@@ -13,9 +13,6 @@ set(ENABLE_INTERNAL_QUEUE_H OFF CACHE BOOL "Use own queue.h")
 set(DISABLE_GLIB20          OFF CACHE BOOL "Don't build with glib")
 set(DISABLE_SNDFILE         OFF CACHE BOOL "Don't build with sndfile")
 set(DISABLE_TAGLIB          OFF CACHE BOOL "Don't build with taglib")
-set(DISABLE_MPG123          OFF CACHE BOOL "Don't build with mpg123")
-set(DISABLE_MPCDEC          OFF CACHE BOOL "Don't build with mpcdec")
-set(DISABLE_GSTREAMER       OFF CACHE BOOL "Don't build with gstreamer")
 set(DISABLE_FFMPEG          OFF CACHE BOOL "Don't build with ffmpeg")
 set(DISABLE_RSVG2           OFF CACHE BOOL "Don't build with rsvg2")
 set(DISABLE_GTK2            OFF CACHE BOOL "Don't build with gtk2")
@@ -29,11 +26,10 @@ add_subdirectory(scanner)
 
 to_yes_no(SUMMARY_HAS_QUEUE SUMMARY_GLIB20_FOUND
           SUMMARY_GTHREAD20_FOUND SUMMARY_SNDFILE_FOUND SUMMARY_TAGLIB_FOUND
-          SUMMARY_MPG123_FOUND SUMMARY_MPCDEC_FOUND SUMMARY_GSTREAMER_FOUND
           SUMMARY_FFMPEG_FOUND SUMMARY_RSVG2_FOUND SUMMARY_GTK2_FOUND
           SUMMARY_QT4_FOUND SUMMARY_QT5_FOUND)
 to_yes_no(DISABLE_GLIB20 DISABLE_SNDFILE DISABLE_TAGLIB
-          DISABLE_MPG123 DISABLE_MPCDEC DISABLE_GSTREAMER DISABLE_FFMPEG
+          DISABLE_FFMPEG
           DISABLE_RSVG2 DISABLE_GTK2 DISABLE_QT4 DISABLE_QT5)
 
 if(ENABLE_INTERNAL_QUEUE_H)
@@ -49,9 +45,6 @@ message(STATUS "glib-2.0:       ${SUMMARY_GLIB20_FOUND}"     "     ${DISABLE_GLI
 message(STATUS "gthread-2.0:    ${SUMMARY_GTHREAD20_FOUND}"  "     ${DISABLE_GLIB20}")
 message(STATUS "sndfile:        ${SUMMARY_SNDFILE_FOUND}"    "     ${DISABLE_SNDFILE}")
 message(STATUS "taglib:         ${SUMMARY_TAGLIB_FOUND}"     "     ${DISABLE_TAGLIB}")
-message(STATUS "mpg123:         ${SUMMARY_MPG123_FOUND}"     "     ${DISABLE_MPG123}")
-message(STATUS "mpcdec:         ${SUMMARY_MPCDEC_FOUND}"     "     ${DISABLE_MPCDEC}")
-message(STATUS "gstreamer:      ${SUMMARY_GSTREAMER_FOUND}"  "     ${DISABLE_GSTREAMER}")
 message(STATUS "ffmpeg:         ${SUMMARY_FFMPEG_FOUND}"     "     ${DISABLE_FFMPEG}")
 message(STATUS "rsvg2:          ${SUMMARY_RSVG2_FOUND}"      "     ${DISABLE_RSVG2}")
 message(STATUS "gtk2:           ${SUMMARY_GTK2_FOUND}"       "     ${DISABLE_GTK2}")

@@ -28,11 +28,6 @@ int input_init(char *exe_name, char const *forced_plugin);
 int input_deinit(void);
 struct input_ops *input_get_ops(char const *filename);
 
-#ifdef GSTREAMER_INPUT_STATIC
-struct input_ops gstreamer_ip_ops;
-char const *gstreamer_ip_exts[1];
-#endif
-
 int input_open_fd(char const *filename);
 void input_close_fd(int fd);
 int input_read_fd(int fd, void *buf, unsigned int count);

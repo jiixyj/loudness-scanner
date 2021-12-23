@@ -79,7 +79,7 @@ print_help(void)
 	printf(
 	    "  --force-plugin=PLUGIN      force input plugin; PLUGIN is one of:\n");
 	printf(
-	    "                             sndfile, mpg123, musepack, ffmpeg\n");
+	    "                             sndfile, ffmpeg\n");
 #ifdef USE_SNDFILE
 	printf(
 	    "  --decode=FILE              decode one input to FILE (32 bit float WAV,\n");
