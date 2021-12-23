@@ -14,16 +14,16 @@
 
 gboolean verbose = TRUE;
 gboolean histogram = FALSE;
-gchar *decode_to_file = NULL;
+gchar *decode_to_file = nullptr;
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent,
 	  Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
 	      Qt::WindowStaysOnTopHint)
     , dragPosition()
-    , worker_thread_(NULL)
+    , worker_thread_(nullptr)
     , gui_update_thread_(this)
-    , logo_rotation_timer(NULL)
+    , logo_rotation_timer(nullptr)
 {
 	setWindowTitle("Loudness Drop");
 
@@ -31,14 +31,14 @@ MainWindow::MainWindow(QWidget *parent)
 	setMaximumSize(130, 130);
 	setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-	QAction *quitAction = new QAction(tr("E&xit"), this);
+	auto *quitAction = new QAction(tr("E&xit"), this);
 	quitAction->setShortcut(tr("Ctrl+Q"));
 	connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
 	addAction(quitAction);
 
 	setContextMenuPolicy(Qt::ActionsContextMenu);
 
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	layout->setMargin(0);
 	layout->setSpacing(0);
 	render_area_ = new RenderArea;
@@ -101,8 +101,9 @@ MainWindow::mouseReleaseEvent(QMouseEvent *event)
 void
 MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
-	if (event->mimeData()->hasUrls())
+	if (event->mimeData()->hasUrls()) {
 		event->acceptProposedAction();
+	}
 }
 
 void
@@ -132,7 +133,7 @@ MainWindow::cleanUpThread()
 {
 	worker_thread_->wait();
 	delete worker_thread_;
-	worker_thread_ = NULL;
+	worker_thread_ = nullptr;
 }
 
 void
@@ -155,14 +156,15 @@ MainWindow::resetLogo()
 {
 	logo_rotation_timer->stop();
 	delete logo_rotation_timer;
-	logo_rotation_timer = NULL;
+	logo_rotation_timer = nullptr;
 	render_area_->resetLogo();
 }
 
 void
 MainWindow::showResultList(GSList *files, Filetree tree)
 {
-	ResultWindow *res = new ResultWindow(NULL, files, tree);
+	(void)this;
+	auto *res = new ResultWindow(nullptr, files, tree);
 	res->setAttribute(Qt::WA_DeleteOnClose);
 	res->show();
 }
@@ -174,7 +176,7 @@ ResultWindow::ResultWindow(QWidget *parent, GSList *files, Filetree tree)
     , tree_(tree)
 {
 	setWindowTitle("Scanning Result");
-	QVBoxLayout *layout = new QVBoxLayout;
+	auto *layout = new QVBoxLayout;
 	setLayout(layout);
 
 	view = new QTreeView;
@@ -185,7 +187,7 @@ ResultWindow::ResultWindow(QWidget *parent, GSList *files, Filetree tree)
 	view->setAlternatingRowColors(true);
 	view->setModel(proxyModel);
 	view->setSortingEnabled(true);
-	view->sortByColumn(-1);
+	view->sortByColumn(-1, Qt::AscendingOrder);
 	view->setItemsExpandable(false);
 #if QT_VERSION >= 0x050000
 	view->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -197,8 +199,8 @@ ResultWindow::ResultWindow(QWidget *parent, GSList *files, Filetree tree)
 	view->header()->setStretchLastSection(false);
 	view->setItemDelegateForColumn(0, new IconDelegate);
 
-	QHBoxLayout *bbox = new QHBoxLayout;
-	QPushButton *close_button = new QPushButton("&Close", this);
+	auto *bbox = new QHBoxLayout;
+	auto *close_button = new QPushButton("&Close", this);
 	connect(close_button, SIGNAL(clicked()), this, SLOT(close()));
 	tag_button = new QPushButton("&Tag files", this);
 	connect(tag_button, SIGNAL(clicked()), this, SLOT(tag_files()));
@@ -212,7 +214,7 @@ ResultWindow::ResultWindow(QWidget *parent, GSList *files, Filetree tree)
 
 ResultWindow::~ResultWindow()
 {
-	g_slist_foreach(files_, filetree_free_list_entry, NULL);
+	g_slist_foreach(files_, filetree_free_list_entry, nullptr);
 	g_slist_free(files_);
 	filetree_destroy(tree_);
 }
@@ -239,10 +241,7 @@ ResultWindow::tag_files()
 			if (!fd->tagged) {
 				int ret = 0;
 				tag_file(fln, &ret);
-				if (!ret)
-					fd->tagged = 1;
-				else
-					fd->tagged = 2;
+				fd->tagged = !ret ? 1 : 2;
 			}
 			emit view->dataChanged(proxyModel->mapFromSource(
 						   data.index(row_index, 0)),
@@ -259,9 +258,8 @@ ResultData::ResultData(GSList *files)
 {
 	GSList *it = files;
 	while (it) {
-		struct filename_list_node *fln = (struct filename_list_node *)
-						     it->data;
-		struct file_data *fd = (struct file_data *)fln->d;
+		auto *fln = (struct filename_list_node *)it->data;
+		auto *fd = (struct file_data *)fln->d;
 		if (fd->scanned) {
 			files_.push_back(fln);
 		}
@@ -286,7 +284,7 @@ ResultData::data(QModelIndex const &index, int role) const
 {
 	if (role == Qt::DisplayRole) {
 		struct filename_list_node *fln = files_[size_t(index.row())];
-		struct file_data *fd = (struct file_data *)fln->d;
+		auto *fd = (struct file_data *)fln->d;
 		switch (index.column()) {
 		case 1:
 			return fln->fr->display;
@@ -320,7 +318,7 @@ ResultData::data(QModelIndex const &index, int role) const
 		}
 	} else if (role == Qt::UserRole) {
 		struct filename_list_node *fln = files_[size_t(index.row())];
-		struct file_data *fd = (struct file_data *)fln->d;
+		auto *fd = (struct file_data *)fln->d;
 		switch (index.column()) {
 		case 0:
 			return fd->tagged;
@@ -377,8 +375,9 @@ IconDelegate::paint(QPainter *painter, QStyleOptionViewItem const &option,
 {
 	int tag_status = index.data(Qt::UserRole).toInt();
 	QStyledItemDelegate::paint(painter, option, index);
-	if (tag_status == 0)
+	if (tag_status == 0) {
 		return;
+	}
 	QIcon icon = tag_status == 1 ?
 		  QApplication::style()->standardIcon(QStyle::SP_DialogApplyButton) :
 		  QApplication::style()->standardIcon(QStyle::SP_DialogCancelButton);
@@ -405,8 +404,9 @@ void
 RenderArea::updateLogo()
 {
 	rotation_state += G_PI / 20;
-	if (rotation_state >= 2.0 * G_PI)
+	if (rotation_state >= 2.0 * G_PI) {
 		rotation_state = 0.0;
+	}
 	repaint();
 }
 
@@ -420,7 +420,7 @@ RenderArea::resetLogo()
 void
 RenderArea::paintEvent(QPaintEvent *)
 {
-	static const qreal scale_factor = 0.8f;
+	static const qreal scale_factor = 0.8F;
 	QPainter painter(this);
 	QSize s = svg_renderer_->defaultSize();
 	QSizeF ws(size());
@@ -442,7 +442,7 @@ RenderArea::paintEvent(QPaintEvent *)
 }
 
 WorkerThread::WorkerThread(QList<QUrl> const &urls)
-    : QThread(NULL)
+    : QThread(nullptr)
     , urls_(urls)
 {
 }
@@ -461,12 +461,13 @@ WorkerThread::run()
 		    g_strdup(it->toLocalFile().toLocal8Bit().constData()));
 #endif
 	}
-	GSList *errors = NULL, *files = NULL;
+	GSList *errors = nullptr;
+	GSList *files = nullptr;
 	Filetree tree = filetree_init(&roots[0], roots.size(), TRUE, FALSE,
 	    FALSE, &errors);
 
 	g_slist_foreach(errors, filetree_print_error, &verbose);
-	g_slist_foreach(errors, filetree_free_error, NULL);
+	g_slist_foreach(errors, filetree_free_error, nullptr);
 	g_slist_free(errors);
 
 	filetree_file_list(tree, &files);
@@ -476,7 +477,7 @@ WorkerThread::run()
 	if (result) {
 		emit showResultList(files, tree);
 	} else {
-		g_slist_foreach(files, filetree_free_list_entry, NULL);
+		g_slist_foreach(files, filetree_free_list_entry, nullptr);
 		g_slist_free(files);
 		filetree_destroy(tree);
 	}
@@ -505,11 +506,10 @@ GUIUpdateThread::run()
 				rotation_active_ = true;
 				emit rotateLogo();
 			}
-			int new_value = int(
+			int new_value = (int)std::lround(
 			    CLAMP(double(elapsed_frames) / double(total_frames),
 				0.0, 1.0) *
-				130.0 +
-			    0.5);
+			    130.0);
 			if (new_value != old_progress_bar_value_) {
 				emit setProgressBar(new_value);
 				old_progress_bar_value_ = new_value;
@@ -540,8 +540,7 @@ main(int argc, char *argv[])
 	QApplication app(argc, argv);
 
 	/* initialization */
-	g_thread_init(NULL);
-	input_init(argv[0], NULL);
+	input_init(argv[0], nullptr);
 	scanner_init_common();
 	setlocale(LC_COLLATE, "");
 	setlocale(LC_CTYPE, "");
@@ -551,5 +550,5 @@ main(int argc, char *argv[])
 
 	MainWindow window;
 	window.show();
-	return app.exec();
+	return QApplication::exec();
 }

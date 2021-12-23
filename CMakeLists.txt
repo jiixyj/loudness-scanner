@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(loudness-scanner)
 
+option(ENABLE_COMPILER_WARNINGS "enable compiler warnings" OFF)
+
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -34,6 +36,31 @@ set(DISABLE_QT5
     CACHE BOOL "Don't build with qt5")
 
 add_subdirectory(ebur128/ebur128)
+
+if(ENABLE_COMPILER_WARNINGS)
+  add_compile_options(
+    -Wall #
+    -Wextra #
+    -Wconversion #
+    -Wsign-conversion #
+    -Wundef #
+    -Werror=return-type #
+    -Werror=undef #
+    -Wno-unknown-pragmas)
+
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:C>:-Wmissing-prototypes>
+    $<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>
+    $<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>)
+
+  add_compile_options(-fdiagnostics-color=always)
+
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:-Wno-missing-field-initializers> #
+    $<$<COMPILE_LANGUAGE:CXX>:-Wno-builtin-declaration-mismatch> #
+  )
+endif()
+
 add_subdirectory(scanner)
 
 to_yes_no(

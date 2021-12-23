@@ -283,7 +283,7 @@ to_opus_gain(double gain)
 		return INT16_MAX;
 	}
 
-	return std::floor(gain);
+	return static_cast<int16_t>(std::floor(gain));
 }
 
 static void
