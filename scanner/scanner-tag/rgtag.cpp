@@ -242,24 +242,6 @@ void clamp_gain_data(struct gain_data* gd) {
   gd->track_gain = clamp_rg(gd->track_gain);
 }
 
-void adjust_with_file_gain(struct gain_data* gd,
-                           const char* filename,
-                           const char* extension) {
-  if (!std::strcmp(extension, "opus")) {
-    std::pair<TagLib::File*, TagLib::Ogg::XiphComment*> p
-        = get_ogg_file(filename, extension);
-    if (!p.first->isValid()) {
-      delete p.first;
-      return;
-    }
-    TagLib::ByteVector header =
-        static_cast<TagLib::Ogg::Opus::File *>(p.first)->packet(0);
-    double opus_header_gain_current = header.toShort(16, false) / 256.0;
-    adjust_gain_data(gd, opus_header_gain_current);
-    delete p.first;
-  }
-}
-
 static bool tag_vorbis_comment(const char* filename,
                                const char* extension,
                                struct gain_data* gd,
@@ -277,34 +259,18 @@ static bool tag_vorbis_comment(const char* filename,
   if (is_opus) {
     TagLib::ByteVector header =
         static_cast<TagLib::Ogg::Opus::File *>(p.first)->packet(0);
-    double opus_header_gain_current = header.toShort(16, false) / 256.0;
 
     double opus_header_gain =
-        opus_header_gain_current +
         (gd->album_mode ? gd->album_gain : gd->track_gain) - 5.0;
+
     int16_t opus_header_gain_int = to_opus_gain(opus_header_gain);
-    double opus_correction_db =
-        opus_header_gain_current - opus_header_gain_int / 256.0;
+    double opus_correction_db = -opus_header_gain_int / 256.0;
 
     gd_opus = *gd;
     adjust_gain_data(&gd_opus, opus_correction_db);
 
     int16_t opus_r128_album_gain_int = to_opus_gain(gd_opus.album_gain - 5.0);
     int16_t opus_r128_track_gain_int = to_opus_gain(gd_opus.track_gain - 5.0);
-
-    // std::cerr << "ocg: "
-    //           << " 0x" << std::hex << std::setfill('0') << std::setw(4)
-    //           << header.toShort(16, false) << " (" << opus_header_gain_current
-    //           << ")" << std::endl;
-    // std::cerr << "ohg: "
-    //           << " 0x" << std::hex << std::setfill('0') << std::setw(4)
-    //           << opus_header_gain_int << " (" << opus_header_gain_int / 256.0
-    //           << ")" << std::endl;
-    // std::cerr << std::dec;
-    // std::cerr << "oag: " << opus_r128_album_gain_int << " "
-    //           << "(" << opus_r128_album_gain_int / 256.0 << ")" << std::endl;
-    // std::cerr << "otg: " << opus_r128_track_gain_int << " "
-    //           << "(" << opus_r128_track_gain_int / 256.0 << ")" << std::endl;
 
     header[16] =
         static_cast<char>(static_cast<uint16_t>(opus_header_gain_int) & 0xff);

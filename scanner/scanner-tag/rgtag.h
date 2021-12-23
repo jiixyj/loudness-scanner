@@ -26,10 +26,6 @@ int has_rg_info(const char* filename,
                 const char* extension,
                 int opus_compat);
 
-void adjust_with_file_gain(struct gain_data* gd,
-                           const char* filename,
-                           const char* extension);
-
 #ifdef __cplusplus
 }
 #endif

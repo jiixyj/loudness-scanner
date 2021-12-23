@@ -116,7 +116,6 @@ static void print_file_data(struct filename_list_node *fln, gpointer unused)
                                fd->gain_album, fd->peak_album};
         char *basename, *extension, *filename;
         get_filename_and_extension(fln, &basename, &extension, &filename);
-        adjust_with_file_gain(&gd, filename, extension);
         clamp_gain_data(&gd);
 
         g_free(basename);

@@ -97,6 +97,12 @@ static int ffmpeg_open_file(struct input_handle* ih, const char* filename) {
 
   ih->codec_context->request_sample_fmt = AV_SAMPLE_FMT_FLT;
 
+  // Ignore Opus gain when decoding.
+  if (ih->codec_context->codec_id == AV_CODEC_ID_OPUS &&
+      ih->codec_context->extradata_size >= 18) {
+    ih->codec_context->extradata[16] = ih->codec_context->extradata[17] = 0;
+  }
+
   ih->codec = avcodec_find_decoder(ih->codec_context->codec_id);
   if (ih->codec == NULL) {
     fprintf(stderr, "Could not find a decoder for the audio format!\n");
