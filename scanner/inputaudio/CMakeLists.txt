@@ -12,8 +12,8 @@ if(GMODULE20_FOUND AND NOT DISABLE_GLIB20)
   add_subdirectory(ffmpeg)
 
   include_directories(SYSTEM ${GMODULE20_INCLUDE_DIRS})
-  link_directories(          ${GMODULE20_LIBRARY_DIRS})
-  add_definitions(           ${GMODULE20_CFLAGS_OTHER})
+  link_directories(${GMODULE20_LIBRARY_DIRS})
+  add_definitions(${GMODULE20_CFLAGS_OTHER})
 
   add_library(input input)
 
