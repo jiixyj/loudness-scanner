@@ -329,8 +329,9 @@ show_result_list(struct work_data *wd)
 /* drop handling and work */
 
 static gpointer
-do_work(struct work_data *wd)
+do_work(gpointer arg)
 {
+	struct work_data *wd = arg;
 	int result;
 
 	GSList *errors = NULL;
@@ -398,7 +399,8 @@ handle_data_received(GtkWidget *widget, GdkDragContext *drag_context, gint x,
 	sl = g_new(struct work_data, 1);
 	sl->roots = files;
 	sl->length = no_uris;
-	worker_thread = g_thread_create((GThreadFunc)do_work, sl, FALSE, NULL);
+	worker_thread = g_thread_new(NULL, do_work, sl);
+	g_thread_unref(worker_thread);
 
 	gtk_drag_finish(drag_context, TRUE, FALSE, time);
 }
@@ -472,7 +474,10 @@ handle_expose(GtkWidget *widget, GdkEventExpose *event, RsvgHandle *rh)
 	(void)event;
 
 	if (scale_factor <= 0.0) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		rsvg_handle_get_dimensions(rh, &rdd);
+#pragma GCC diagnostic pop
 		scale_factor = 0.8 *
 		    MIN(DRAW_HEIGHT / rdd.width, DRAW_HEIGHT / rdd.height);
 	}
@@ -488,15 +493,20 @@ handle_expose(GtkWidget *widget, GdkEventExpose *event, RsvgHandle *rh)
 	    (DRAW_HEIGHT - new_height) / 2.0);
 	cairo_scale(cr, scale_factor, scale_factor);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	rsvg_handle_render_cairo(rh, cr);
+#pragma GCC diagnostic pop
 
 	cairo_destroy(cr);
 	return TRUE;
 }
 
 static gpointer
-update_bar(GtkWidget *widget)
+update_bar(gpointer arg)
 {
+	GtkWidget *widget = arg;
+
 	double frac;
 	double new_frac;
 	GtkWidget *vbox = gtk_bin_get_child(GTK_BIN(widget));
@@ -564,14 +574,12 @@ main(int argc, char *argv[])
 	GtkWidget *vbox;
 	GtkWidget *drawing_area;
 	GtkWidget *progress_bar;
-	GThread *bar_thread;
 	GtkActionGroup *action_group;
 	GtkUIManager *menu_manager;
 	GError *error;
 	RsvgHandle *rh;
 
 	/* initialization */
-	g_thread_init(NULL);
 	gdk_threads_init();
 	gdk_threads_enter();
 	gtk_init(&argc, &argv);
@@ -622,8 +630,7 @@ main(int argc, char *argv[])
 	gtk_widget_set_size_request(progress_bar, 130, 15);
 
 	/* set up bar thread */
-	bar_thread = g_thread_create((GThreadFunc)update_bar, window, FALSE,
-	    NULL);
+	g_thread_unref(g_thread_new(NULL, update_bar, window));
 
 	/* set up action group */
 	gtk_action_group_add_actions(action_group, action_entries,
