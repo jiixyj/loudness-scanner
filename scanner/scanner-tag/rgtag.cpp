@@ -285,7 +285,7 @@ static bool tag_vorbis_comment(const char* filename,
       p.second->addField("R128_ALBUM_GAIN",
                          std::to_string(opus_r128_album_gain_int));
     } else {
-      p.second->removeField("R128_ALBUM_GAIN");
+      p.second->removeFields("R128_ALBUM_GAIN");
     }
 
     clamp_gain_data(&gd_opus);
@@ -301,10 +301,10 @@ static bool tag_vorbis_comment(const char* filename,
   // std::cerr << "tp: " << gds->track_peak << std::endl;
 
   if (is_opus && !opus_compat) {
-    p.second->removeField("REPLAYGAIN_TRACK_GAIN");
-    p.second->removeField("REPLAYGAIN_TRACK_PEAK");
-    p.second->removeField("REPLAYGAIN_ALBUM_GAIN");
-    p.second->removeField("REPLAYGAIN_ALBUM_PEAK");
+    p.second->removeFields("REPLAYGAIN_TRACK_GAIN");
+    p.second->removeFields("REPLAYGAIN_TRACK_PEAK");
+    p.second->removeFields("REPLAYGAIN_ALBUM_GAIN");
+    p.second->removeFields("REPLAYGAIN_ALBUM_PEAK");
   } else {
     p.second->addField("REPLAYGAIN_TRACK_GAIN", gds->track_gain);
     p.second->addField("REPLAYGAIN_TRACK_PEAK", gds->track_peak);
@@ -312,8 +312,8 @@ static bool tag_vorbis_comment(const char* filename,
       p.second->addField("REPLAYGAIN_ALBUM_GAIN", gds->album_gain);
       p.second->addField("REPLAYGAIN_ALBUM_PEAK", gds->album_peak);
     } else {
-      p.second->removeField("REPLAYGAIN_ALBUM_GAIN");
-      p.second->removeField("REPLAYGAIN_ALBUM_PEAK");
+      p.second->removeFields("REPLAYGAIN_ALBUM_GAIN");
+      p.second->removeFields("REPLAYGAIN_ALBUM_PEAK");
     }
   }
 
@@ -353,10 +353,10 @@ static bool has_vorbis_comment(const char* filename,
     }
   }
 
-  p.second->removeField("REPLAYGAIN_ALBUM_GAIN");
-  p.second->removeField("REPLAYGAIN_ALBUM_PEAK");
-  p.second->removeField("REPLAYGAIN_TRACK_GAIN");
-  p.second->removeField("REPLAYGAIN_TRACK_PEAK");
+  p.second->removeFields("REPLAYGAIN_ALBUM_GAIN");
+  p.second->removeFields("REPLAYGAIN_ALBUM_PEAK");
+  p.second->removeFields("REPLAYGAIN_TRACK_GAIN");
+  p.second->removeFields("REPLAYGAIN_TRACK_PEAK");
 
   if (is_opus) {
     if (p.second->fieldCount() < fieldCount) {
@@ -376,8 +376,8 @@ static bool has_vorbis_comment(const char* filename,
       goto end;
     }
 
-    p.second->removeField("R128_ALBUM_GAIN");
-    p.second->removeField("R128_TRACK_GAIN");
+    p.second->removeFields("R128_ALBUM_GAIN");
+    p.second->removeFields("R128_TRACK_GAIN");
   }
 
   has_tag = p.second->fieldCount() < fieldCount;
