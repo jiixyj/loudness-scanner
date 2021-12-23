@@ -410,7 +410,6 @@ static void
 ffmpeg_free_buffer(struct input_handle *ih)
 {
 	(void)ih;
-	return;
 }
 
 static void
@@ -423,7 +422,7 @@ ffmpeg_close_file(struct input_handle *ih)
 }
 
 static int
-ffmpeg_init_library()
+ffmpeg_init_library(void)
 {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	// Register all formats and codecs
@@ -434,9 +433,8 @@ ffmpeg_init_library()
 }
 
 static void
-ffmpeg_exit_library()
+ffmpeg_exit_library(void)
 {
-	return;
 }
 
 G_MODULE_EXPORT struct input_ops ip_ops = { ffmpeg_get_channels,

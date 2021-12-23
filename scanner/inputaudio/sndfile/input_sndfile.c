@@ -63,14 +63,14 @@ sndfile_open_file(struct input_handle *ih, char const *filename)
 	ih->file = sf_open(filename, SFM_READ, &ih->file_info);
 #endif
 
-	if (ih->file) {
-		return 0;
-	} else {
+	if (!ih->file) {
 #ifdef G_OS_WIN32
 		_close(fd);
 #endif
 		return 1;
 	}
+
+	return 0;
 }
 
 static int
@@ -79,8 +79,9 @@ sndfile_set_channel_map(struct input_handle *ih, int *st)
 	int result;
 	int *channel_map = (int *)calloc((size_t)ih->file_info.channels,
 	    sizeof(int));
-	if (!channel_map)
+	if (!channel_map) {
 		return 1;
+	}
 	result = sf_command(ih->file, SFC_GET_CHANNEL_MAP_INFO,
 	    (void *)channel_map,
 	    (int)((size_t)ih->file_info.channels * sizeof(int)));
@@ -118,10 +119,10 @@ sndfile_set_channel_map(struct input_handle *ih, int *st)
 		}
 		free(channel_map);
 		return 0;
-	} else {
-		free(channel_map);
-		return 1;
 	}
+
+	free(channel_map);
+	return 1;
 }
 
 static int
@@ -129,11 +130,10 @@ sndfile_allocate_buffer(struct input_handle *ih)
 {
 	ih->buffer = (float *)malloc((size_t)ih->file_info.samplerate *
 	    (size_t)ih->file_info.channels * sizeof(float));
-	if (ih->buffer) {
-		return 0;
-	} else {
+	if (!ih->buffer) {
 		return 1;
 	}
+	return 0;
 }
 
 static size_t
@@ -166,15 +166,14 @@ sndfile_close_file(struct input_handle *ih)
 }
 
 static int
-sndfile_init_library()
+sndfile_init_library(void)
 {
 	return 0;
 }
 
 static void
-sndfile_exit_library()
+sndfile_exit_library(void)
 {
-	return;
 }
 
 G_MODULE_EXPORT struct input_ops ip_ops = { sndfile_get_channels,

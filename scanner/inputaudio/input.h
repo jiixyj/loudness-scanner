@@ -20,8 +20,8 @@ struct input_ops {
 	size_t (*read_frames)(struct input_handle *ih);
 	void (*free_buffer)(struct input_handle *ih);
 	void (*close_file)(struct input_handle *ih);
-	int (*init_library)();
-	void (*exit_library)();
+	int (*init_library)(void);
+	void (*exit_library)(void);
 };
 
 int input_init(char *exe_name, char const *forced_plugin);
