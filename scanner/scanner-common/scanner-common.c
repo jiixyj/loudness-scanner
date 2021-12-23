@@ -325,7 +325,10 @@ print_progress_bar(gpointer arg)
 			*started = 1;
 			g_cond_broadcast(&progress_cond);
 		}
-		g_cond_wait(&progress_cond, &progress_mutex);
+
+		if (total_frames != elapsed_frames) {
+			g_cond_wait(&progress_cond, &progress_mutex);
+		}
 
 		/* refresh progress bar at max 10 times per second */
 		gint64 current_time = g_get_monotonic_time();
