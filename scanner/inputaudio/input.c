@@ -57,12 +57,13 @@ input_init(char *exe_name, char const *forced_plugin)
 		*it = r128_path;
 	}
 
-	if (forced_plugin)
+	if (forced_plugin) {
 		plugin_forced = 1;
+	}
 	/* Load plugins */
 	while (*cur_plugin_name) {
 		if (forced_plugin &&
-		    strcmp(forced_plugin, (*cur_plugin_name) + 6)) {
+		    strcmp(forced_plugin, (*cur_plugin_name) + 6) != 0) {
 			++cur_plugin_name;
 			continue;
 		}
@@ -88,9 +89,10 @@ input_init(char *exe_name, char const *forced_plugin)
 			}
 		}
 		if (ops) {
-			if (verbose)
+			if (verbose) {
 				fprintf(stderr, "found plugin %s\n",
 				    *cur_plugin_name);
+			}
 			ops->init_library();
 			plugin_found = 1;
 		}
