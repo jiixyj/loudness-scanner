@@ -3,6 +3,8 @@
 #ifndef RGTAG_H_
 #define RGTAG_H_
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,7 +22,7 @@ void clamp_gain_data(struct gain_data *gd);
 int set_rg_info(char const *filename, char const *extension,
     struct gain_data *gd, int opus_compat);
 
-int has_rg_info(char const *filename, char const *extension, int opus_compat);
+bool has_rg_info(char const *filename, char const *extension, int opus_compat);
 
 #ifdef __cplusplus
 }

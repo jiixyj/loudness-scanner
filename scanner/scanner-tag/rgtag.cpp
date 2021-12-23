@@ -47,15 +47,14 @@ parse_string_to_float(std::string const &s, bool string_dummy = false)
 }
 
 static bool
-clear_txxx_tag(TagLib::ID3v2::Tag *tag, TagLib::String tag_name,
-    float *old_content = NULL)
+clear_txxx_tag(TagLib::ID3v2::Tag *tag, TagLib::String const &tag_name,
+    float *old_content = nullptr)
 {
 	TagLib::ID3v2::FrameList l = tag->frameList("TXXX");
-	for (TagLib::ID3v2::FrameList::Iterator it = l.begin(); it != l.end();
-	     ++it) {
-		TagLib::ID3v2::UserTextIdentificationFrame *fr =
+	for (auto *it : l) {
+		auto *fr =
 		    dynamic_cast<TagLib::ID3v2::UserTextIdentificationFrame *>(
-			*it);
+			it);
 		if (fr && fr->description().upper() == tag_name) {
 			if (old_content) {
 				*old_content = parse_string_to_float(
@@ -70,13 +69,12 @@ clear_txxx_tag(TagLib::ID3v2::Tag *tag, TagLib::String tag_name,
 }
 
 static bool
-clear_rva2_tag(TagLib::ID3v2::Tag *tag, TagLib::String tag_name)
+clear_rva2_tag(TagLib::ID3v2::Tag *tag, TagLib::String const &tag_name)
 {
 	TagLib::ID3v2::FrameList l = tag->frameList("RVA2");
-	for (TagLib::ID3v2::FrameList::Iterator it = l.begin(); it != l.end();
-	     ++it) {
-		TagLib::ID3v2::RelativeVolumeFrame *fr =
-		    dynamic_cast<TagLib::ID3v2::RelativeVolumeFrame *>(*it);
+	for (auto *it : l) {
+		auto *fr = /**/
+		    dynamic_cast<TagLib::ID3v2::RelativeVolumeFrame *>(it);
 		if (fr && fr->identification().upper() == tag_name) {
 			tag->removeFrame(fr);
 			return true;
@@ -86,7 +84,8 @@ clear_rva2_tag(TagLib::ID3v2::Tag *tag, TagLib::String tag_name)
 }
 
 static void
-set_txxx_tag(TagLib::ID3v2::Tag *tag, std::string tag_name, std::string value)
+set_txxx_tag(TagLib::ID3v2::Tag *tag, std::string const &tag_name,
+    std::string const &value)
 {
 	TagLib::ID3v2::UserTextIdentificationFrame *txxx =
 	    TagLib::ID3v2::UserTextIdentificationFrame::find(tag, tag_name);
@@ -99,15 +98,14 @@ set_txxx_tag(TagLib::ID3v2::Tag *tag, std::string tag_name, std::string value)
 }
 
 static void
-set_rva2_tag(TagLib::ID3v2::Tag *tag, std::string tag_name, double gain,
+set_rva2_tag(TagLib::ID3v2::Tag *tag, std::string const &tag_name, double gain,
     double peak)
 {
-	TagLib::ID3v2::RelativeVolumeFrame *rva2 = NULL;
+	TagLib::ID3v2::RelativeVolumeFrame *rva2 = nullptr;
 	TagLib::ID3v2::FrameList rva2_frame_list = tag->frameList("RVA2");
-	TagLib::ID3v2::FrameList::ConstIterator it = rva2_frame_list.begin();
-	for (; it != rva2_frame_list.end(); ++it) {
-		TagLib::ID3v2::RelativeVolumeFrame *fr =
-		    dynamic_cast<TagLib::ID3v2::RelativeVolumeFrame *>(*it);
+	for (auto *it : rva2_frame_list) {
+		auto *fr = /**/
+		    dynamic_cast<TagLib::ID3v2::RelativeVolumeFrame *>(it);
 		if (fr->identification() == tag_name) {
 			rva2 = fr;
 			break;
@@ -124,8 +122,7 @@ set_rva2_tag(TagLib::ID3v2::Tag *tag, std::string tag_name, double gain,
 	TagLib::ID3v2::RelativeVolumeFrame::PeakVolume peak_volume;
 	peak_volume.bitsRepresentingPeak = 16;
 	double amp_peak = peak * 32768.0 > 65535.0 ? 65535.0 : peak * 32768.0;
-	unsigned int amp_peak_int = static_cast<unsigned int>(
-	    std::ceil(amp_peak));
+	auto amp_peak_int = static_cast<unsigned int>(std::ceil(amp_peak));
 	TagLib::ByteVector bv_uint = TagLib::ByteVector::fromUInt(amp_peak_int);
 	peak_volume.peakVolume = TagLib::ByteVector(&(bv_uint.data()[2]), 2);
 	rva2->setPeakVolume(peak_volume);
@@ -155,10 +152,14 @@ struct gain_data_strings {
 		ss.str(std::string());
 		ss.clear();
 	}
-	std::string track_gain, track_peak, album_gain, album_peak;
+
+	std::string track_gain;
+	std::string track_peak;
+	std::string album_gain;
+	std::string album_peak;
 };
 
-static bool
+static int
 tag_id3v2(char const *filename, struct gain_data *gd,
     struct gain_data_strings *gds)
 {
@@ -170,35 +171,37 @@ tag_id3v2(char const *filename, struct gain_data *gd,
 	}
 
 	while (clear_txxx_tag(id3v2tag,
-	    TagLib::String("replaygain_album_gain").upper()))
-		;
+	    TagLib::String("replaygain_album_gain").upper())) {
+	}
 	while (clear_txxx_tag(id3v2tag,
-	    TagLib::String("replaygain_album_peak").upper()))
-		;
-	while (clear_rva2_tag(id3v2tag, TagLib::String("album").upper()))
-		;
+	    TagLib::String("replaygain_album_peak").upper())) {
+	}
+	while (clear_rva2_tag(id3v2tag, TagLib::String("album").upper())) {
+	}
 	while (clear_txxx_tag(id3v2tag,
-	    TagLib::String("replaygain_track_gain").upper()))
-		;
+	    TagLib::String("replaygain_track_gain").upper())) {
+	}
 	while (clear_txxx_tag(id3v2tag,
-	    TagLib::String("replaygain_track_peak").upper()))
-		;
-	while (clear_rva2_tag(id3v2tag, TagLib::String("track").upper()))
-		;
+	    TagLib::String("replaygain_track_peak").upper())) {
+	}
+	while (clear_rva2_tag(id3v2tag, TagLib::String("track").upper())) {
+	}
 	set_txxx_tag(id3v2tag, "replaygain_track_gain", gds->track_gain);
 	set_txxx_tag(id3v2tag, "replaygain_track_peak", gds->track_peak);
-	if (version == 4)
+	if (version == 4) {
 		set_rva2_tag(id3v2tag, "track", gd->track_gain, gd->track_peak);
+	}
 	if (gd->album_mode) {
 		set_txxx_tag(id3v2tag, "replaygain_album_gain",
 		    gds->album_gain);
 		set_txxx_tag(id3v2tag, "replaygain_album_peak",
 		    gds->album_peak);
-		if (version == 4)
+		if (version == 4) {
 			set_rva2_tag(id3v2tag, "album", gd->album_gain,
 			    gd->album_peak);
+		}
 	}
-	return !f.save(TagLib::MPEG::File::ID3v2,
+	return (int)!f.save(TagLib::MPEG::File::ID3v2,
 	    TagLib::File::StripTags::StripNone,
 	    version <= 3 ? TagLib::ID3v2::Version::v3 :
 				 TagLib::ID3v2::Version::v4);
@@ -214,27 +217,33 @@ has_tag_id3v2(char const *filename)
 	float old_tag_value = 0;
 
 	while (clear_txxx_tag(id3v2tag,
-	    TagLib::String("replaygain_album_gain").upper()))
+	    TagLib::String("replaygain_album_gain").upper())) {
 		has_tag = true;
+	}
 	while (clear_txxx_tag(id3v2tag,
 	    TagLib::String("replaygain_album_peak").upper(), &old_tag_value)) {
-		if (old_tag_value == 0)
+		if (old_tag_value == 0) {
 			return false;
+		}
 		has_tag = true;
 	}
-	while (clear_rva2_tag(id3v2tag, TagLib::String("album").upper()))
+	while (clear_rva2_tag(id3v2tag, TagLib::String("album").upper())) {
 		has_tag = true;
+	}
 	while (clear_txxx_tag(id3v2tag,
-	    TagLib::String("replaygain_track_gain").upper()))
+	    TagLib::String("replaygain_track_gain").upper())) {
 		has_tag = true;
+	}
 	while (clear_txxx_tag(id3v2tag,
 	    TagLib::String("replaygain_track_peak").upper(), &old_tag_value)) {
-		if (old_tag_value == 0)
+		if (old_tag_value == 0) {
 			return false;
+		}
 		has_tag = true;
 	}
-	while (clear_rva2_tag(id3v2tag, TagLib::String("track").upper()))
+	while (clear_rva2_tag(id3v2tag, TagLib::String("track").upper())) {
 		has_tag = true;
+	}
 
 	return has_tag;
 }
@@ -242,22 +251,19 @@ has_tag_id3v2(char const *filename)
 static std::pair<TagLib::File *, TagLib::Ogg::XiphComment *>
 get_ogg_file(char const *filename, char const *extension)
 {
-	TagLib::File *file = NULL;
-	TagLib::Ogg::XiphComment *xiph = NULL;
+	TagLib::File *file = nullptr;
+	TagLib::Ogg::XiphComment *xiph = nullptr;
 	if (!std::strcmp(extension, "flac")) {
-		TagLib::FLAC::File *f = new TagLib::FLAC::File(
-		    CAST_FILENAME filename);
+		auto *f = new TagLib::FLAC::File(CAST_FILENAME filename);
 		xiph = f->xiphComment(true);
 		file = f;
 	} else if (!std::strcmp(extension, "ogg") ||
 	    !std::strcmp(extension, "oga")) {
-		TagLib::Ogg::Vorbis::File *f = new TagLib::Ogg::Vorbis::File(
-		    CAST_FILENAME filename);
+		auto *f = new TagLib::Ogg::Vorbis::File(CAST_FILENAME filename);
 		xiph = f->tag();
 		file = f;
 	} else if (!std::strcmp(extension, "opus")) {
-		TagLib::Ogg::Opus::File *f = new TagLib::Ogg::Opus::File(
-		    CAST_FILENAME filename);
+		auto *f = new TagLib::Ogg::Opus::File(CAST_FILENAME filename);
 		xiph = f->tag();
 		file = f;
 	}
@@ -268,9 +274,16 @@ static int16_t
 to_opus_gain(double gain)
 {
 	gain = 256 * gain + 0.5;
-	return gain < -32768 ? -32768 :
-	    gain < 32767     ? static_cast<int16_t>(floor(gain)) :
-				     32767;
+
+	if (gain < INT16_MIN) {
+		return INT16_MIN;
+	}
+
+	if (gain >= INT16_MAX) {
+		return INT16_MAX;
+	}
+
+	return std::floor(gain);
 }
 
 static void
@@ -291,12 +304,15 @@ adjust_gain_data(struct gain_data *gd, double opus_correction_db)
 static double
 clamp_rg(double x)
 {
-	if (x < -51.0)
+	if (x < -51.0) {
 		return -51.0;
-	else if (x > 51.0)
+	}
+
+	if (x > 51.0) {
 		return 51.0;
-	else
-		return x;
+	}
+
+	return x;
 }
 
 void
@@ -306,7 +322,7 @@ clamp_gain_data(struct gain_data *gd)
 	gd->track_gain = clamp_rg(gd->track_gain);
 }
 
-static bool
+static int
 tag_vorbis_comment(char const *filename, char const *extension,
     struct gain_data *gd, struct gain_data_strings *gds, bool opus_compat)
 {
@@ -317,15 +333,12 @@ tag_vorbis_comment(char const *filename, char const *extension,
 	struct gain_data gd_opus;
 	struct gain_data_strings gds_opus(&gd_opus);
 
-	// std::cerr << std::endl;
-
 	if (is_opus) {
 		TagLib::ByteVector header =
 		    static_cast<TagLib::Ogg::Opus::File *>(p.first)->packet(0);
 
-		double opus_header_gain = (gd->album_mode ? gd->album_gain :
-								  gd->track_gain) -
-		    5.0;
+		double opus_header_gain = /**/
+		    (gd->album_mode ? gd->album_gain : gd->track_gain) - 5.0;
 
 		int16_t opus_header_gain_int = to_opus_gain(opus_header_gain);
 		double opus_correction_db = -opus_header_gain_int / 256.0;
@@ -362,11 +375,6 @@ tag_vorbis_comment(char const *filename, char const *extension,
 		gds = &gds_opus;
 	}
 
-	// std::cerr << "ag: " << gds->album_gain << std::endl;
-	// std::cerr << "ap: " << gds->album_peak << std::endl;
-	// std::cerr << "tg: " << gds->track_gain << std::endl;
-	// std::cerr << "tp: " << gds->track_peak << std::endl;
-
 	if (is_opus && !opus_compat) {
 		p.second->removeFields("REPLAYGAIN_TRACK_GAIN");
 		p.second->removeFields("REPLAYGAIN_TRACK_PEAK");
@@ -388,7 +396,7 @@ tag_vorbis_comment(char const *filename, char const *extension,
 
 	bool success = p.first->save();
 	delete p.first;
-	return !success;
+	return (int)!success;
 }
 
 static bool
@@ -406,9 +414,8 @@ has_vorbis_comment(char const *filename, char const *extension,
 	TagLib::Ogg::FieldListMap const &flm = p.second->fieldListMap();
 	if (flm.contains("REPLAYGAIN_ALBUM_PEAK")) {
 		TagLib::StringList const &sl = flm["REPLAYGAIN_ALBUM_PEAK"];
-		for (TagLib::StringList::ConstIterator i = sl.begin();
-		     i != sl.end(); ++i) {
-			if (parse_string_to_float(i->to8Bit()) == 0) {
+		for (auto const &i : sl) {
+			if (parse_string_to_float(i.to8Bit()) == 0) {
 				has_tag = false;
 				goto end;
 			}
@@ -416,9 +423,8 @@ has_vorbis_comment(char const *filename, char const *extension,
 	}
 	if (flm.contains("REPLAYGAIN_TRACK_PEAK")) {
 		TagLib::StringList const &sl = flm["REPLAYGAIN_TRACK_PEAK"];
-		for (TagLib::StringList::ConstIterator i = sl.begin();
-		     i != sl.end(); ++i) {
-			if (parse_string_to_float(i->to8Bit()) == 0) {
+		for (auto const &i : sl) {
+			if (parse_string_to_float(i.to8Bit()) == 0) {
 				has_tag = false;
 				goto end;
 			}
@@ -464,23 +470,21 @@ end:
 static std::pair<TagLib::File *, TagLib::APE::Tag *>
 get_ape_file(char const *filename, char const *extension)
 {
-	TagLib::File *file = NULL;
-	TagLib::APE::Tag *ape = NULL;
+	TagLib::File *file = nullptr;
+	TagLib::APE::Tag *ape = nullptr;
 	if (!std::strcmp(extension, "mpc")) {
-		TagLib::MPC::File *f = new TagLib::MPC::File(
-		    CAST_FILENAME filename);
+		auto *f = new TagLib::MPC::File(CAST_FILENAME filename);
 		ape = f->APETag(true);
 		file = f;
 	} else if (!std::strcmp(extension, "wv")) {
-		TagLib::WavPack::File *f = new TagLib::WavPack::File(
-		    CAST_FILENAME filename);
+		auto *f = new TagLib::WavPack::File(CAST_FILENAME filename);
 		ape = f->APETag(true);
 		file = f;
 	}
 	return std::make_pair(file, ape);
 }
 
-static bool
+static int
 tag_ape(char const *filename, char const *extension, struct gain_data *gd,
     struct gain_data_strings *gds)
 {
@@ -497,7 +501,7 @@ tag_ape(char const *filename, char const *extension, struct gain_data *gd,
 	}
 	bool success = p.first->save();
 	delete p.first;
-	return !success;
+	return (int)!success;
 }
 
 static bool
@@ -518,7 +522,7 @@ has_tag_ape(char const *filename, char const *extension)
 	return has_tag;
 }
 
-static bool
+static int
 tag_mp4(char const *filename, struct gain_data *gd,
     struct gain_data_strings *gds)
 {
@@ -540,7 +544,7 @@ tag_mp4(char const *filename, struct gain_data *gd,
 		t->removeItem("----:com.apple.iTunes:replaygain_album_gain");
 		t->removeItem("----:com.apple.iTunes:replaygain_album_peak");
 	}
-	return !f.save();
+	return (int)!f.save();
 }
 
 static bool
@@ -560,9 +564,8 @@ has_tag_mp4(char const *filename)
 		TagLib::StringList const &sl =
 		    ilm["----:com.apple.iTunes:replaygain_album_peak"]
 			.toStringList();
-		for (TagLib::StringList::ConstIterator i = sl.begin();
-		     i != sl.end(); ++i) {
-			if (parse_string_to_float(i->to8Bit()) == 0) {
+		for (auto const &i : sl) {
+			if (parse_string_to_float(i.to8Bit()) == 0) {
 				return false;
 			}
 		}
@@ -571,9 +574,8 @@ has_tag_mp4(char const *filename)
 		TagLib::StringList const &sl =
 		    ilm["----:com.apple.iTunes:replaygain_track_peak"]
 			.toStringList();
-		for (TagLib::StringList::ConstIterator i = sl.begin();
-		     i != sl.end(); ++i) {
-			if (parse_string_to_float(i->to8Bit()) == 0) {
+		for (auto const &i : sl) {
+			if (parse_string_to_float(i.to8Bit()) == 0) {
 				return false;
 			}
 		}
@@ -592,7 +594,7 @@ int
 set_rg_info(char const *filename, char const *extension, struct gain_data *gd,
     int opus_compat)
 {
-	if (std::strcmp(extension, "opus")) {
+	if (std::strcmp(extension, "opus") != 0) {
 		/* For opus, we clamp in tag_vorbis_comment(). */
 		clamp_gain_data(gd);
 	}
@@ -601,37 +603,49 @@ set_rg_info(char const *filename, char const *extension, struct gain_data *gd,
 
 	if (!std::strcmp(extension, "mp3") || !std::strcmp(extension, "mp2")) {
 		return tag_id3v2(filename, gd, &gds);
-	} else if (!std::strcmp(extension, "flac") ||
-	    !std::strcmp(extension, "opus") || !std::strcmp(extension, "ogg") ||
+	}
+
+	if (!std::strcmp(extension, "flac") ||
+	    !std::strcmp(extension, "opus") || /**/
+	    !std::strcmp(extension, "ogg") ||  /**/
 	    !std::strcmp(extension, "oga")) {
 		return tag_vorbis_comment(filename, extension, gd, &gds,
 		    !!opus_compat);
-	} else if (!std::strcmp(extension, "mpc") ||
-	    !std::strcmp(extension, "wv")) {
+	}
+
+	if (!std::strcmp(extension, "mpc") || !std::strcmp(extension, "wv")) {
 		return tag_ape(filename, extension, gd, &gds);
-	} else if (!std::strcmp(extension, "mp4") ||
-	    !std::strcmp(extension, "m4a")) {
+	}
+
+	if (!std::strcmp(extension, "mp4") || !std::strcmp(extension, "m4a")) {
 		return tag_mp4(filename, gd, &gds);
 	}
+
 	return 1;
 }
 
-int
+bool
 has_rg_info(char const *filename, char const *extension, int opus_compat)
 {
 	if (!std::strcmp(extension, "mp3") || !std::strcmp(extension, "mp2")) {
 		return has_tag_id3v2(filename);
-	} else if (!std::strcmp(extension, "flac") ||
-	    !std::strcmp(extension, "opus") || !std::strcmp(extension, "ogg") ||
+	}
+
+	if (!std::strcmp(extension, "flac") ||
+	    !std::strcmp(extension, "opus") || /**/
+	    !std::strcmp(extension, "ogg") ||  /**/
 	    !std::strcmp(extension, "oga")) {
 		return has_vorbis_comment(filename, extension, !!opus_compat);
-		// TODO: implement "0.0 workaround" for ape
-	} else if (!std::strcmp(extension, "mpc") ||
-	    !std::strcmp(extension, "wv")) {
+	}
+
+	// TODO: implement "0.0 workaround" for ape
+	if (!std::strcmp(extension, "mpc") || !std::strcmp(extension, "wv")) {
 		return has_tag_ape(filename, extension);
-	} else if (!std::strcmp(extension, "mp4") ||
-	    !std::strcmp(extension, "m4a")) {
+	}
+
+	if (!std::strcmp(extension, "mp4") || !std::strcmp(extension, "m4a")) {
 		return has_tag_mp4(filename);
 	}
-	return 0;
+
+	return false;
 }
