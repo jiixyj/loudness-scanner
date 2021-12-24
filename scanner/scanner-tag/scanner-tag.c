@@ -18,19 +18,22 @@ static gboolean track = FALSE;
 static gboolean dry_run = FALSE;
 static gboolean incremental_tagging = FALSE;
 static gboolean force_as_album = FALSE;
-static gboolean opus_compat = FALSE;
+static gboolean opus_vorbisgain_compat = FALSE;
 extern gchar *decode_to_file;
 
-static GOptionEntry entries[] = { { "track", 't', 0, G_OPTION_ARG_NONE, &track,
-				      NULL, NULL },
-	{ "dry-run", 'n', 0, G_OPTION_ARG_NONE, &dry_run, NULL, NULL },
-	{ "incremental", 0, 0, G_OPTION_ARG_NONE, &incremental_tagging, NULL,
-	    NULL },
-	{ "force-as-album", 0, 0, G_OPTION_ARG_NONE, &force_as_album, NULL,
-	    NULL },
-	{ "opus-vorbisgain-compat", 0, 0, G_OPTION_ARG_NONE, &opus_compat, NULL,
-	    NULL },
-	{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, 0 } };
+static GOptionEntry entries[] = {
+	{ "track", 't', 0, G_OPTION_ARG_NONE, /**/
+	    &track, NULL, NULL },
+	{ "dry-run", 'n', 0, G_OPTION_ARG_NONE, /**/
+	    &dry_run, NULL, NULL },
+	{ "incremental", 0, 0, G_OPTION_ARG_NONE, /**/
+	    &incremental_tagging, NULL, NULL },
+	{ "force-as-album", 0, 0, G_OPTION_ARG_NONE, /**/
+	    &force_as_album, NULL, NULL },
+	{ "opus-vorbisgain-compat", 0, 0, G_OPTION_ARG_NONE, /**/
+	    &opus_vorbisgain_compat, NULL, NULL },
+	{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, 0 },
+};
 
 static void
 fill_album_data(struct filename_list_node *fln, double const *album_data)
@@ -175,7 +178,8 @@ tag_file(struct filename_list_node *fln, int *ret)
 		get_filename_and_extension(fln, &basename, &extension,
 		    &filename);
 
-		error = set_rg_info(filename, extension, &gd, opus_compat);
+		error = set_rg_info(filename, extension, &gd,
+		    opus_vorbisgain_compat);
 		if (error) {
 			if (tag_output_state == 0) {
 				fflush(stderr);
@@ -254,7 +258,7 @@ append_to_untagged_list(struct filename_list_node *fln, GSList **ret)
 	char *filename;
 	get_filename_and_extension(fln, &basename, &extension, &filename);
 
-	if (!has_rg_info(filename, extension, opus_compat)) {
+	if (!has_rg_info(filename, extension, opus_vorbisgain_compat)) {
 		*ret = g_slist_prepend(*ret, fln);
 	}
 
