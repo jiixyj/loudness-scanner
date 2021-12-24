@@ -78,7 +78,7 @@ print_help(void)
 	    "  --no-sort                  do not sort command line arguments alphabetically\n");
 	printf(
 	    "  --force-plugin=PLUGIN      force input plugin; PLUGIN is one of:\n");
-	printf(
+	printf(/**/
 	    "                             sndfile, ffmpeg\n");
 #ifdef USE_SNDFILE
 	printf(
@@ -105,6 +105,60 @@ print_help(void)
 	    "  -t, --track                write only track gain (album gain is default)\n");
 	printf(
 	    "  -n, --dry-run              perform a trial run with no changes made\n");
+	printf(
+	    "  --incremental              skip files that are already tagged\n");
+	printf(
+	    "  --force-as-album           treat all given files as one album\n");
+	printf(
+	    "  --opus-vorbisgain-compat   for compatibility with older software,\n");
+	printf(
+	    "                             write 'REPLAYGAIN_*' tags to Opus files\n");
+	printf(/**/
+	    "                             in addition to 'R128_*' tags\n");
+	printf(
+	    "  --opus-header-gain=ABS_DB|r128[,track][,offset=DB]|rg[,track][,offset=DB]\n");
+	printf(/**/
+	    "                             write specific values into Opus header gain field,\n");
+	printf(/**/
+	    "                             adjusting 'R128_*'/'REPLAYGAIN_*' tag values\n");
+	printf(/**/
+	    "                             as needed\n");
+	printf(/**/
+	    "                               examples:\n");
+	printf(/**/
+	    "                                   --opus-header-gain=r128\n");
+	printf(/**/
+	    "                                       R128 album/track gain (depending\n");
+	printf(/**/
+	    "                                       on '-t' parameter) in gain field,\n");
+	printf(/**/
+	    "                                       this setting is the default\n");
+	printf(/**/
+	    "                                   --opus-header-gain=r128,track\n");
+	printf(/**/
+	    "                                       R128 track gain in gain field\n");
+	printf(/**/
+	    "                                   --opus-header-gain=rg\n");
+	printf(/**/
+	    "                                       ReplayGain compatible album/track gain\n");
+	printf(/**/
+	    "                                       (depending on '-t' parameter) in\n");
+	printf(/**/
+	    "                                       gain field\n");
+	printf(/**/
+	    "                                   --opus-header-gain=rg,offset=3\n");
+	printf(/**/
+	    "                                       ReplayGain compatible album/track gain\n");
+	printf(/**/
+	    "                                       (depending on '-t' parameter) in\n");
+	printf(/**/
+	    "                                       gain field, plus 3dB\n");
+	printf(/**/
+	    "                                   --opus-header-gain=0:   0dB in gain field\n");
+	printf(/**/
+	    "                                   --opus-header-gain=2:   2dB in gain field\n");
+	printf(/**/
+	    "                                   --opus-header-gain=-3:  -3dB in gain field\n");
 	printf("\n");
 #endif
 	printf(" Dump options:\n");

@@ -76,8 +76,18 @@ or:
 Use the option "-r" to search recursively for music files and tag them as one
 album per subfolder.
 
-The reference volume is -18 LUFS (5 dB louder than the EBU R 128 reference level
-of -23 LUFS).
+Some more advanced tagging options are supported as well:
+
+- incremental tagging
+- forcing files to be treated as a single album (even though the files might be
+  scattered over multiple folders)
+- `REPLAYGAIN_*` tags for Opus files (may be useful for older player software)
+- fine control over what values are written into the Opus header gain field
+
+The reference volume for tagging is -18 LUFS (5 dB louder than the EBU R 128
+reference level of -23 LUFS). See
+[here](<https://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification>)
+for more details and sources.
 
 Use the option "-p" to print information about peak values. Use "-p sample" for
 sample peaks, "-p true" for true peaks, "-p dbtp" for true peaks in dBTP and
