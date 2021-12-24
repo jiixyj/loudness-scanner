@@ -323,7 +323,8 @@ clamp_gain_data(struct gain_data *gd)
 
 static int
 tag_vorbis_comment(char const *filename, char const *extension,
-    struct gain_data *gd, struct gain_data_strings *gds, bool opus_compat)
+    struct gain_data *gd, struct gain_data_strings *gds,
+    OpusTagInfo const *opus_tag_info)
 {
 	std::pair<TagLib::File *, TagLib::Ogg::XiphComment *> p =
 	    get_ogg_file(filename, extension);
@@ -333,8 +334,19 @@ tag_vorbis_comment(char const *filename, char const *extension,
 	struct gain_data_strings gds_opus(&gd_opus);
 
 	if (is_opus) {
-		double opus_header_gain = /**/
-		    (gd->album_mode ? gd->album_gain : gd->track_gain) - 5.0;
+		double opus_header_gain;
+
+		if (opus_tag_info->opus_gain_reference ==
+		    OPUS_GAIN_REFERENCE_ABSOLUTE) {
+			opus_header_gain = opus_tag_info->offset;
+		} else {
+			opus_header_gain = /**/
+			    (!opus_tag_info->is_track && gd->album_mode) ?
+				  gd->album_gain :
+				  gd->track_gain;
+			opus_header_gain -= 5.0;
+			opus_header_gain += opus_tag_info->offset;
+		}
 
 		int16_t opus_header_gain_int = to_opus_gain(opus_header_gain);
 
@@ -373,7 +385,7 @@ tag_vorbis_comment(char const *filename, char const *extension,
 		gds = &gds_opus;
 	}
 
-	if (is_opus && !opus_compat) {
+	if (is_opus && !opus_tag_info->vorbisgain_compat) {
 		p.second->removeFields("REPLAYGAIN_TRACK_GAIN");
 		p.second->removeFields("REPLAYGAIN_TRACK_PEAK");
 		p.second->removeFields("REPLAYGAIN_ALBUM_GAIN");
@@ -590,7 +602,7 @@ has_tag_mp4(char const *filename)
 
 int
 set_rg_info(char const *filename, char const *extension, struct gain_data *gd,
-    int opus_compat)
+    OpusTagInfo const *opus_tag_info)
 {
 	if (std::strcmp(extension, "opus") != 0) {
 		/* For opus, we clamp in tag_vorbis_comment(). */
@@ -608,7 +620,7 @@ set_rg_info(char const *filename, char const *extension, struct gain_data *gd,
 	    !std::strcmp(extension, "ogg") ||  /**/
 	    !std::strcmp(extension, "oga")) {
 		return tag_vorbis_comment(filename, extension, gd, &gds,
-		    !!opus_compat);
+		    opus_tag_info);
 	}
 
 	if (!std::strcmp(extension, "mpc") || !std::strcmp(extension, "wv")) {
@@ -623,7 +635,8 @@ set_rg_info(char const *filename, char const *extension, struct gain_data *gd,
 }
 
 bool
-has_rg_info(char const *filename, char const *extension, int opus_compat)
+has_rg_info(char const *filename, char const *extension,
+    OpusTagInfo const *opus_tag_info)
 {
 	if (!std::strcmp(extension, "mp3") || !std::strcmp(extension, "mp2")) {
 		return has_tag_id3v2(filename);
@@ -633,7 +646,8 @@ has_rg_info(char const *filename, char const *extension, int opus_compat)
 	    !std::strcmp(extension, "opus") || /**/
 	    !std::strcmp(extension, "ogg") ||  /**/
 	    !std::strcmp(extension, "oga")) {
-		return has_vorbis_comment(filename, extension, !!opus_compat);
+		return has_vorbis_comment(filename, extension,
+		    opus_tag_info->vorbisgain_compat);
 	}
 
 	// TODO: implement "0.0 workaround" for ape

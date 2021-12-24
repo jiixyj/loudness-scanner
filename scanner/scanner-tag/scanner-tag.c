@@ -2,6 +2,8 @@
 
 #include "scanner-tag.h"
 
+#include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,12 +16,100 @@ static struct file_data empty;
 
 extern gboolean verbose;
 extern gboolean histogram;
+
 static gboolean track = FALSE;
 static gboolean dry_run = FALSE;
 static gboolean incremental_tagging = FALSE;
 static gboolean force_as_album = FALSE;
+
 static gboolean opus_vorbisgain_compat = FALSE;
+static OpusTagInfo opus_tag_info = {
+	.opus_gain_reference = OPUS_GAIN_REFERENCE_R128,
+};
+
 extern gchar *decode_to_file;
+
+static gboolean
+parse_opus_header_gain(gchar const *option_name, gchar const *value,
+    gpointer data, GError **error)
+{
+	gboolean rc = FALSE;
+
+	(void)option_name;
+	(void)data;
+	(void)error;
+
+	gchar **elements = g_strsplit(value, ",", -1);
+	if (elements[0] == NULL) {
+		goto out;
+	}
+
+	bool is_rg;
+	if (strcmp(elements[0], "r128") == 0) {
+		opus_tag_info.opus_gain_reference = OPUS_GAIN_REFERENCE_R128;
+		is_rg = false;
+	} else if (strcmp(elements[0], "rg") == 0) {
+		opus_tag_info.opus_gain_reference = OPUS_GAIN_REFERENCE_R128;
+		is_rg = true;
+	} else {
+		gchar *endptr;
+		gdouble offset = g_ascii_strtod(elements[0], &endptr);
+		if (endptr == elements[0] || *endptr != '\0' || errno != 0 ||
+		    !isfinite(offset)) {
+			goto out;
+		}
+		opus_tag_info.opus_gain_reference =
+		    OPUS_GAIN_REFERENCE_ABSOLUTE;
+		opus_tag_info.offset = offset;
+	}
+
+	bool got_track = false;
+	bool got_offset = false;
+	for (gchar **it = elements + 1; *it != NULL; ++it) {
+		if (opus_tag_info.opus_gain_reference ==
+		    OPUS_GAIN_REFERENCE_ABSOLUTE) {
+			goto out;
+		}
+
+		if (strcmp(*it, "track") == 0) {
+			if (got_track) {
+				goto out;
+			}
+			got_track = true;
+
+			opus_tag_info.is_track = true;
+
+		} else if (strncmp(*it, "offset=", 7) == 0) {
+			if (got_offset) {
+				goto out;
+			}
+			got_offset = true;
+
+			gchar *startptr = *it + 7;
+			gchar *endptr;
+			gdouble offset = g_ascii_strtod(startptr, &endptr);
+			if (endptr == startptr || *endptr != '\0' ||
+			    errno != 0 || !isfinite(offset)) {
+				goto out;
+			}
+			opus_tag_info.offset = offset;
+
+		} else {
+			goto out;
+		}
+	}
+
+	if (opus_tag_info.opus_gain_reference == OPUS_GAIN_REFERENCE_R128 &&
+	    is_rg) {
+		opus_tag_info.offset += 5.0;
+	}
+
+	rc = TRUE;
+
+out:
+	g_strfreev(elements);
+	return rc;
+}
 
 static GOptionEntry entries[] = {
 	{ "track", 't', 0, G_OPTION_ARG_NONE, /**/
@@ -32,6 +122,8 @@ static GOptionEntry entries[] = {
 	    &force_as_album, NULL, NULL },
 	{ "opus-vorbisgain-compat", 0, 0, G_OPTION_ARG_NONE, /**/
 	    &opus_vorbisgain_compat, NULL, NULL },
+	{ "opus-header-gain", 0, 0, G_OPTION_ARG_CALLBACK, /**/
+	    parse_opus_header_gain, NULL, NULL },
 	{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, 0 },
 };
 
@@ -178,8 +270,7 @@ tag_file(struct filename_list_node *fln, int *ret)
 		get_filename_and_extension(fln, &basename, &extension,
 		    &filename);
 
-		error = set_rg_info(filename, extension, &gd,
-		    opus_vorbisgain_compat);
+		error = set_rg_info(filename, extension, &gd, &opus_tag_info);
 		if (error) {
 			if (tag_output_state == 0) {
 				fflush(stderr);
@@ -242,7 +333,7 @@ tag_files(GSList *files)
 
 	fprintf(stderr, "Tagging");
 	g_slist_foreach(files, (GFunc)tag_file, &ret);
-	if (!ret) {
+	if (ret == 0) {
 		fprintf(stderr, " Success!");
 	}
 	fputc('\n', stderr);
@@ -258,7 +349,7 @@ append_to_untagged_list(struct filename_list_node *fln, GSList **ret)
 	char *filename;
 	get_filename_and_extension(fln, &basename, &extension, &filename);
 
-	if (!has_rg_info(filename, extension, opus_vorbisgain_compat)) {
+	if (!has_rg_info(filename, extension, &opus_tag_info)) {
 		*ret = g_slist_prepend(*ret, fln);
 	}
 
@@ -294,5 +385,8 @@ loudness_tag_parse(int *argc, char **argv[])
 		}
 		return FALSE;
 	}
+
+	opus_tag_info.vorbisgain_compat = opus_vorbisgain_compat != FALSE;
+
 	return TRUE;
 }
