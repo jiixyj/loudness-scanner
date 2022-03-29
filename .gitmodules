@@ -1,6 +1,6 @@
 [submodule "scanner/filetree"]
 	path = scanner/filetree
-	url = git://github.com/jiixyj/filewalk.git
+	url = https://github.com/jiixyj/filewalk.git
 [submodule "ebur128"]
 	path = ebur128
-	url = git://github.com/jiixyj/libebur128.git
+	url = https://github.com/jiixyj/libebur128.git

@@ -52,7 +52,7 @@ In the root folder, type:
 
 If you want the git version, run:
 
-    git clone git://github.com/jiixyj/loudness-scanner.git
+    git clone https://github.com/jiixyj/loudness-scanner.git
     cd loudness-scanner
     git submodule init
     git submodule update
