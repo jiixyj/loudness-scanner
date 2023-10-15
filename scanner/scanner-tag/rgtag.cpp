@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <iomanip>
 #include <ios>
